@@ -105,7 +105,7 @@ services:
       context: ./services/web
       dockerfile: Dockerfile
     environment:
-      - REACT_APP_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:3000
     ports:
       - 8080:80
     depends_on:

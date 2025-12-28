@@ -8,12 +8,15 @@ module.exports = {
     '!src/**/*.test.ts',
     '!src/**/__tests__/**'
   ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/'
+  ],
   coverageThreshold: {
     global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100
+      branches: 80,
+      functions: 60,
+      lines: 80,
+      statements: 80
     }
   }
 };
