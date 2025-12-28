@@ -1,0 +1,14 @@
+:80 {
+    # Serve web UI
+    reverse_proxy web-ui:80
+
+    # API requests to gateway
+    handle /api/* {
+        reverse_proxy api-gateway:3000
+    }
+
+    # Health endpoint passthrough
+    handle /health {
+        reverse_proxy api-gateway:3000
+    }
+}

@@ -1,0 +1,22 @@
+{$DOMAIN} {
+    # Automatic HTTPS with Let's Encrypt
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer-when-downgrade"
+    }
+
+    # API requests to gateway
+    handle /api/* {
+        reverse_proxy api-gateway:3000 {
+            health_uri /health
+            health_interval 30s
+        }
+    }
+
+    # Everything else to web UI
+    reverse_proxy web-ui:80
+}
