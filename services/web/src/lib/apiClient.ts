@@ -10,6 +10,7 @@ export interface Asset {
 }
 
 export interface EnrichedAsset extends Asset {
+  createdAt?: string;
   groupId?: string;
   groupType?: string;
   isPrimaryVersion?: boolean;
