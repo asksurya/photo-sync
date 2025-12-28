@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from unittest.mock import Mock, patch
 from datetime import datetime
 import uuid
 
@@ -169,3 +170,109 @@ def test_set_primary_member_nonexistent_member(db_session):
     # Try to set non-existent member as primary
     result = set_primary_member(db_session, group.group_id, uuid.uuid4())
     assert result is False
+
+
+def test_create_file_group_rollback_on_error(db_session):
+    """Test that create_file_group rolls back on error."""
+    from src.crud import create_file_group
+
+    group_data = FileGroupCreate(group_type="raw_jpeg")
+
+    # Mock commit to raise an exception
+    with patch.object(db_session, 'commit', side_effect=Exception("Database error")):
+        with pytest.raises(Exception, match="Database error"):
+            create_file_group(db_session, group_data)
+
+    # Verify rollback was called
+    assert db_session.query(Base.metadata.tables['file_groups']).count() == 0
+
+
+def test_delete_file_group_rollback_on_error(db_session):
+    """Test that delete_file_group rolls back on error."""
+    from src.crud import delete_file_group
+
+    # Create a group
+    group_data = FileGroupCreate(group_type="raw_jpeg")
+    group = create_file_group(db_session, group_data)
+
+    # Mock commit to raise an exception
+    with patch.object(db_session, 'commit', side_effect=Exception("Database error")):
+        with pytest.raises(Exception, match="Database error"):
+            delete_file_group(db_session, group.group_id)
+
+    # Verify group still exists (rollback occurred)
+    retrieved = get_file_group(db_session, group.group_id)
+    assert retrieved is not None
+
+
+def test_create_group_member_duplicate_file_path(db_session):
+    """Test that duplicate file_path returns None."""
+    from src.crud import create_group_member
+    from src.schemas import GroupMemberCreate
+
+    # Create group
+    group_data = FileGroupCreate(group_type="raw_jpeg")
+    group = create_file_group(db_session, group_data)
+
+    # Add first member
+    member_data = GroupMemberCreate(
+        file_path="/data/photos/IMG_1234.JPG",
+        file_type="jpeg",
+        is_primary=True,
+        file_size=2048576
+    )
+    member1 = create_group_member(db_session, group.group_id, member_data)
+    assert member1 is not None
+
+    # Try to add duplicate file_path
+    member2 = create_group_member(db_session, group.group_id, member_data)
+    assert member2 is None
+
+
+def test_create_group_member_rollback_on_error(db_session):
+    """Test that create_group_member rolls back on non-integrity errors."""
+    from src.crud import create_group_member
+    from src.schemas import GroupMemberCreate
+
+    # Create group
+    group_data = FileGroupCreate(group_type="raw_jpeg")
+    group = create_file_group(db_session, group_data)
+
+    member_data = GroupMemberCreate(
+        file_path="/data/photos/IMG_1234.JPG",
+        file_type="jpeg",
+        is_primary=True,
+        file_size=2048576
+    )
+
+    # Mock commit to raise a non-integrity exception
+    with patch.object(db_session, 'commit', side_effect=Exception("Database error")):
+        with pytest.raises(Exception, match="Database error"):
+            create_group_member(db_session, group.group_id, member_data)
+
+
+def test_set_primary_member_rollback_on_error(db_session):
+    """Test that set_primary_member rolls back on error."""
+    from src.crud import create_group_member, set_primary_member
+    from src.schemas import GroupMemberCreate
+
+    # Create group with member
+    group_data = FileGroupCreate(group_type="raw_jpeg")
+    group = create_file_group(db_session, group_data)
+
+    member_data = GroupMemberCreate(
+        file_path="/data/photos/IMG_1234.JPG",
+        file_type="jpeg",
+        is_primary=False,
+        file_size=2048576
+    )
+    member = create_group_member(db_session, group.group_id, member_data)
+
+    # Mock commit to raise an exception
+    with patch.object(db_session, 'commit', side_effect=Exception("Database error")):
+        with pytest.raises(Exception, match="Database error"):
+            set_primary_member(db_session, group.group_id, member.id)
+
+    # Verify member is still not primary (rollback occurred)
+    db_session.refresh(member)
+    assert member.is_primary is False
