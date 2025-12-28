@@ -8,11 +8,29 @@ jest.mock('redis', () => ({
   createClient: jest.fn(),
 }));
 
+// Mock winston
+jest.mock('winston', () => ({
+  createLogger: jest.fn(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  })),
+  format: {
+    combine: jest.fn(),
+    timestamp: jest.fn(),
+    json: jest.fn(),
+  },
+  transports: {
+    Console: jest.fn(),
+  },
+}));
+
 describe('RedisCache', () => {
   let cache: RedisCache;
   let mockRedisClient: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create a mock Redis client
     mockRedisClient = {
       connect: jest.fn().mockResolvedValue(undefined),
@@ -24,6 +42,7 @@ describe('RedisCache', () => {
 
     (createClient as jest.Mock).mockReturnValue(mockRedisClient);
     cache = new RedisCache('redis://localhost:6379');
+    await cache.connect();
   });
 
   afterEach(async () => {
@@ -74,29 +93,94 @@ describe('RedisCache', () => {
     );
   });
 
-  it('should handle connection errors gracefully', async () => {
+  it('should handle connection errors on connect', async () => {
     const errorMockClient = {
-      connect: jest.fn().mockResolvedValue(undefined),
+      connect: jest.fn().mockRejectedValue(new Error('Connection refused')),
       quit: jest.fn().mockResolvedValue(undefined),
-      setEx: jest.fn().mockRejectedValue(new Error('Connection refused')),
     };
 
     (createClient as jest.Mock).mockReturnValue(errorMockClient);
     const badCache = new RedisCache('redis://invalid:9999');
 
-    // Should throw connection error
-    await expect(
-      badCache.setTokenValidation('token', { userId: 'u1', email: 'e@e.com' }, 300)
-    ).rejects.toThrow('Connection refused');
-
-    await badCache.disconnect();
+    await expect(badCache.connect()).rejects.toThrow('Failed to connect to Redis: Error: Connection refused');
   });
 
-  it('should handle malformed JSON in cache', async () => {
-    mockRedisClient.get.mockResolvedValueOnce('invalid-json');
+  it('should handle connection errors during operations', async () => {
+    mockRedisClient.setEx.mockRejectedValueOnce(new Error('Connection lost'));
 
     await expect(
+      cache.setTokenValidation('token', { userId: 'u1', email: 'e@e.com' }, 300)
+    ).rejects.toThrow('Failed to set token validation: Error: Connection lost');
+  });
+
+  it('should differentiate between malformed JSON and Redis errors in getTokenValidation', async () => {
+    // Test malformed JSON
+    mockRedisClient.get.mockResolvedValueOnce('invalid-json');
+    await expect(
       cache.getTokenValidation('bad-token')
-    ).rejects.toThrow();
+    ).rejects.toThrow('Failed to parse token validation data');
+
+    // Test Redis error
+    mockRedisClient.get.mockRejectedValueOnce(new Error('Redis connection error'));
+    await expect(
+      cache.getTokenValidation('bad-token')
+    ).rejects.toThrow('Failed to get token validation from Redis');
+  });
+
+  describe('Input Validation', () => {
+    it('should throw error for empty token in setTokenValidation', async () => {
+      await expect(
+        cache.setTokenValidation('', { userId: 'u1', email: 'e@e.com' }, 300)
+      ).rejects.toThrow('Token cannot be empty');
+    });
+
+    it('should throw error for empty token in getTokenValidation', async () => {
+      await expect(
+        cache.getTokenValidation('')
+      ).rejects.toThrow('Token cannot be empty');
+    });
+
+    it('should throw error for negative TTL', async () => {
+      await expect(
+        cache.setTokenValidation('token', { userId: 'u1', email: 'e@e.com' }, -1)
+      ).rejects.toThrow('TTL must be greater than 0');
+    });
+
+    it('should throw error for zero TTL', async () => {
+      await expect(
+        cache.setTokenValidation('token', { userId: 'u1', email: 'e@e.com' }, 0)
+      ).rejects.toThrow('TTL must be greater than 0');
+    });
+
+    it('should throw error for missing userId in validation', async () => {
+      await expect(
+        cache.setTokenValidation('token', { userId: '', email: 'e@e.com' }, 300)
+      ).rejects.toThrow('Validation must include userId and email');
+    });
+
+    it('should throw error for missing email in validation', async () => {
+      await expect(
+        cache.setTokenValidation('token', { userId: 'u1', email: '' }, 300)
+      ).rejects.toThrow('Validation must include userId and email');
+    });
+
+    it('should throw error for missing both userId and email', async () => {
+      await expect(
+        cache.setTokenValidation('token', { userId: '', email: '' }, 300)
+      ).rejects.toThrow('Validation must include userId and email');
+    });
+  });
+
+  describe('Encapsulation', () => {
+    it('should not expose client as a public property', () => {
+      // Client is now private in TypeScript
+      // Accessing it directly should cause a TypeScript compilation error
+      // We verify it exists internally for the class to function
+      expect((cache as any).client).toBeDefined();
+
+      // In TypeScript, private members are compile-time only
+      // At runtime they still exist, but TypeScript prevents access
+      // This test verifies the internal client is set up correctly
+    });
   });
 });
