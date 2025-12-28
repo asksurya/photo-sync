@@ -1,7 +1,64 @@
 version: '3.8'
 
 services:
-  # Immich services (unmodified)
+  # Caddy reverse proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - photo-sync-network
+
+  # Web UI
+  web-ui:
+    container_name: web_ui
+    build:
+      context: ./services/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - photo-sync-network
+
+  # API Gateway
+  api-gateway:
+    container_name: api_gateway
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+      target: production
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-3000}
+      - IMMICH_API_URL=${IMMICH_API_URL:-http://immich-server:3001}
+      - GROUPING_API_URL=${GROUPING_API_URL:-http://grouping-service:8000}
+      - DEDUP_API_URL=${DEDUP_API_URL:-http://dedup-service:8001}
+      - REDIS_URL=${REDIS_URL:-redis://custom-redis:6379}
+      - TOKEN_CACHE_TTL=${TOKEN_CACHE_TTL:-300}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      custom-redis:
+        condition: service_healthy
+    networks:
+      - photo-sync-network
+
+  # Immich services (unmodified core)
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
@@ -15,12 +72,14 @@ services:
     volumes:
       - ${MEDIA_PATH}:/data/photos:ro
       - immich-data:/usr/src/app/upload
-    ports:
-      - 2283:3001
     depends_on:
-      - immich-redis
-      - immich-postgres
+      immich-redis:
+        condition: service_started
+      immich-postgres:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - photo-sync-network
 
   immich-machine-learning:
     container_name: immich_machine_learning
@@ -28,11 +87,20 @@ services:
     volumes:
       - immich-ml-cache:/cache
     restart: unless-stopped
+    networks:
+      - photo-sync-network
 
   immich-redis:
     container_name: immich_redis
     image: redis:7-alpine
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - photo-sync-network
 
   immich-postgres:
     container_name: immich_postgres
@@ -44,6 +112,13 @@ services:
     volumes:
       - immich-pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - photo-sync-network
 
   # Custom services
   grouping-service:
@@ -58,9 +133,13 @@ services:
     volumes:
       - ${MEDIA_PATH}:/data/photos:ro
     depends_on:
-      - custom-postgres
-      - custom-redis
+      custom-postgres:
+        condition: service_healthy
+      custom-redis:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - photo-sync-network
 
   dedup-service:
     container_name: dedup_service
@@ -75,44 +154,15 @@ services:
     volumes:
       - ${MEDIA_PATH}:/data/photos:ro
     depends_on:
-      - custom-postgres
-      - custom-redis
+      custom-postgres:
+        condition: service_healthy
+      custom-redis:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - photo-sync-network
 
-  api-gateway:
-    container_name: api_gateway
-    build:
-      context: ./services/gateway
-      dockerfile: Dockerfile
-    environment:
-      - IMMICH_API_URL=http://immich-server:3001
-      - GROUPING_API_URL=http://grouping-service:8000
-      - DEDUP_API_URL=http://dedup-service:8001
-      - REDIS_URL=redis://custom-redis:6379
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-    ports:
-      - 3000:3000
-    depends_on:
-      - immich-server
-      - grouping-service
-      - dedup-service
-      - custom-redis
-    restart: unless-stopped
-
-  web-ui:
-    container_name: web_ui
-    build:
-      context: ./services/web
-      dockerfile: Dockerfile
-    environment:
-      - VITE_API_URL=http://localhost:3000
-    ports:
-      - 8080:80
-    depends_on:
-      - api-gateway
-    restart: unless-stopped
-
-  # Shared infrastructure for custom services
+  # Shared infrastructure
   custom-postgres:
     container_name: custom_postgres
     image: postgres:14-alpine
@@ -121,20 +171,36 @@ services:
       - POSTGRES_USER=postgres
     volumes:
       - custom-pgdata:/var/lib/postgresql/data
-      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - photo-sync-network
 
   custom-redis:
     container_name: custom_redis
     image: redis:7-alpine
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - photo-sync-network
 
 volumes:
   immich-data:
   immich-pgdata:
   immich-ml-cache:
   custom-pgdata:
+  caddy_data:
+  caddy_config:
 
 networks:
-  default:
+  photo-sync-network:
     name: photo-sync-network
