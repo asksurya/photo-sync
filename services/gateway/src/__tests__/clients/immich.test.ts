@@ -86,7 +86,7 @@ describe('ImmichClient', () => {
       const networkError = new Error('Network Error');
       mockAxiosInstance.post.mockRejectedValueOnce(networkError);
 
-      await expect(client.validateToken('token')).rejects.toThrow('Network error during token validation');
+      await expect(client.validateToken('token')).rejects.toThrow('Network Error');
     });
 
     it('should throw error for empty token', async () => {
@@ -134,7 +134,7 @@ describe('ImmichClient', () => {
       const networkError = new Error('Network Error');
       mockAxiosInstance.get.mockRejectedValueOnce(networkError);
 
-      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Network error during asset fetch');
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Network Error');
     });
 
     it('should throw error for empty token', async () => {

@@ -60,7 +60,7 @@ export class ImmichClient {
       }
 
       logger.error('Network error during token validation', { error });
-      throw new Error('Network error during token validation');
+      throw error;
     }
   }
 
@@ -98,7 +98,7 @@ export class ImmichClient {
       }
 
       logger.error('Network error during asset fetch', { error });
-      throw new Error('Network error during asset fetch');
+      throw error;
     }
   }
 }
