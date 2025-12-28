@@ -1,0 +1,48 @@
+version: '3.8'
+
+# Development overrides (auto-loaded with docker-compose up)
+services:
+  # Caddy - expose for local access
+  caddy:
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+
+  # Web UI - expose for direct access
+  web-ui:
+    ports:
+      - "8080:80"
+    build:
+      target: builder
+      args:
+        - SKIP_TESTS=true
+    environment:
+      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:3000}
+
+  # API Gateway - expose for direct access and enable debug logging
+  api-gateway:
+    ports:
+      - "3000:3000"
+    build:
+      target: builder
+      args:
+        - SKIP_TESTS=true
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+
+  # Immich - expose for direct access
+  immich-server:
+    ports:
+      - "2283:3001"
+
+  # Custom postgres - expose for debugging
+  custom-postgres:
+    ports:
+      - "5433:5432"
+
+  # Custom redis - expose for debugging
+  custom-redis:
+    ports:
+      - "6380:6379"
