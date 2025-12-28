@@ -75,16 +75,14 @@ npm test -- --coverage
 ### Watch Mode
 
 ```bash
-# Python (using pytest's built-in watch with file monitoring)
-# Install pytest-xdist for better watch performance (optional)
-pytest --looponfail
-
 # Gateway (Jest)
 cd services/gateway && npm run test:watch
 
 # Web (Vitest)
 cd services/web && npm run test:watch
 ```
+
+> **Note:** Python services do not currently have watch mode configured. Run `pytest` manually after changes, or configure a watch tool like `pytest-watch` if needed.
 
 ## Test Data
 
