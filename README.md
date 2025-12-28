@@ -40,6 +40,51 @@ All services follow TDD with 100% coverage target.
 docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 ```
 
+## Deployment
+
+### Development
+
+```bash
+# Quick start
+cp .env.dev .env
+./scripts/deploy.sh up
+
+# Access services
+# - Web UI: http://localhost:8080
+# - API Gateway: http://localhost:3000
+```
+
+### Production
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete production deployment guide.
+
+```bash
+# Initial setup
+cp .env.prod.example .env.prod
+nano .env.prod  # Configure your settings
+./scripts/deploy.sh --prod up
+```
+
+### Backup and Restore
+
+```bash
+# Create backup
+./scripts/backup.sh
+
+# See docs/RESTORE.md for restore procedures
+```
+
+## Architecture
+
+- **Caddy**: Reverse proxy with automatic HTTPS
+- **Web UI**: React/Vite with nginx
+- **API Gateway**: Node.js/Express with Redis caching
+- **Backend Services**: Immich, Grouping, Deduplication
+- **Databases**: PostgreSQL (Immich + Custom)
+- **Cache**: Redis
+
+For detailed architecture, see [docs/plans/2025-12-28-deployment-setup-design.md](docs/plans/2025-12-28-deployment-setup-design.md)
+
 ## License
 
 MIT
