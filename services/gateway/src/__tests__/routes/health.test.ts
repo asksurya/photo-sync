@@ -138,6 +138,26 @@ describe('createHealthRouter', () => {
     });
 
     describe('Service Failure Cases', () => {
+      it('should return 503 when status is degraded', async () => {
+        mockImmichClient.validateToken.mockRejectedValueOnce(
+          new Error('Connection refused')
+        );
+        mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
+        mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
+        mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
+
+        const response = await request(app)
+          .get('/health')
+          .expect(503);
+
+        expect(response.body.status).toBe('degraded');
+        expect(response.body.services.immich.status).toBe('down');
+        expect(response.body.services.immich).toHaveProperty('error');
+        expect(response.body.services.grouping.status).toBe('up');
+        expect(response.body.services.deduplication.status).toBe('up');
+        expect(response.body.services.redis.status).toBe('up');
+      });
+
       it('should mark Immich as down when health check fails', async () => {
         mockImmichClient.validateToken.mockRejectedValueOnce(
           new Error('Connection refused')
@@ -148,7 +168,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('down');
@@ -171,7 +191,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('up');
@@ -194,7 +214,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('up');
@@ -217,7 +237,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('up');
@@ -237,7 +257,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('down');
@@ -260,7 +280,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('down');
@@ -281,7 +301,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('down');
@@ -296,7 +316,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.immich.status).toBe('down');
@@ -314,7 +334,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.grouping.status).toBe('down');
@@ -332,7 +352,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.deduplication.status).toBe('down');
@@ -350,7 +370,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.status).toBe('degraded');
         expect(response.body.services.redis.status).toBe('down');
@@ -376,6 +396,30 @@ describe('createHealthRouter', () => {
         expect(response.body.services.immich.status).toBe('up');
         expect(response.body.services.immich.latency).toBeGreaterThan(50);
       });
+
+      it('should timeout health checks after 5 seconds', async () => {
+        // Simulate a very slow service that never resolves
+        mockImmichClient.validateToken.mockImplementation(
+          () => new Promise(() => {}) // Never resolves
+        );
+        mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
+        mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
+        mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
+
+        const startTime = Date.now();
+        const response = await request(app)
+          .get('/health')
+          .expect(503);
+        const duration = Date.now() - startTime;
+
+        // Should timeout around 5 seconds (allow some tolerance)
+        expect(duration).toBeGreaterThan(4900);
+        expect(duration).toBeLessThan(5500);
+
+        expect(response.body.status).toBe('degraded');
+        expect(response.body.services.immich.status).toBe('down');
+        expect(response.body.services.immich.error).toContain('Health check timeout');
+      }, 10000); // Increase Jest timeout to 10 seconds
     });
 
     describe('Response Structure', () => {
@@ -424,7 +468,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.services.immich).toEqual({
           status: 'down',
@@ -440,7 +484,7 @@ describe('createHealthRouter', () => {
 
         const response = await request(app)
           .get('/health')
-          .expect(200);
+          .expect(503);
 
         expect(response.body.services.immich).not.toHaveProperty('latency');
         expect(response.body.services.immich.status).toBe('down');

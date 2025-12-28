@@ -8,6 +8,7 @@ import { createLogger, format, transports, Logger } from 'winston';
 
 const HEALTH_CHECK_TOKEN = 'health-check-token';
 const HEALTH_CHECK_PATH = 'health-check';
+const HEALTH_CHECK_TIMEOUT_MS = 5000;
 
 interface ServiceStatus {
   status: 'up' | 'down';
@@ -25,6 +26,15 @@ interface HealthResponse {
   };
 }
 
+// Singleton logger instance
+const logger: Logger = createLogger({
+  format: format.combine(
+    format.timestamp(),
+    format.json()
+  ),
+  transports: [new transports.Console()],
+});
+
 export function createHealthRouter(
   immichClient: ImmichClient,
   groupingClient: GroupingClient,
@@ -32,45 +42,81 @@ export function createHealthRouter(
   redisCache: RedisCache
 ): Router {
   const router = Router();
-  const logger: Logger = createLogger({
-    format: format.combine(
-      format.timestamp(),
-      format.json()
-    ),
-    transports: [new transports.Console()],
-  });
 
   router.get('/', async (req: Request, res: Response) => {
     logger.debug('Health check requested');
 
-    // Check all services in parallel
-    const [immichHealth, groupingHealth, deduplicationHealth, redisHealth] = await Promise.all([
-      checkImmichHealth(immichClient),
-      checkGroupingHealth(groupingClient),
-      checkDeduplicationHealth(deduplicationClient),
-      checkRedisHealth(redisCache),
-    ]);
+    try {
+      // Create a timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Health check timeout'));
+        }, HEALTH_CHECK_TIMEOUT_MS);
+      });
 
-    // Determine overall status
-    const allServicesUp =
-      immichHealth.status === 'up' &&
-      groupingHealth.status === 'up' &&
-      deduplicationHealth.status === 'up' &&
-      redisHealth.status === 'up';
+      // Check all services in parallel with timeout protection
+      const healthChecksPromise = Promise.all([
+        checkImmichHealth(immichClient),
+        checkGroupingHealth(groupingClient),
+        checkDeduplicationHealth(deduplicationClient),
+        checkRedisHealth(redisCache),
+      ]);
 
-    const response: HealthResponse = {
-      status: allServicesUp ? 'ok' : 'degraded',
-      services: {
-        immich: immichHealth,
-        grouping: groupingHealth,
-        deduplication: deduplicationHealth,
-        redis: redisHealth,
-      },
-    };
+      const [immichHealth, groupingHealth, deduplicationHealth, redisHealth] = await Promise.race([
+        healthChecksPromise,
+        timeoutPromise,
+      ]);
 
-    logger.info('Health check completed', { status: response.status });
+      // Determine overall status
+      const allServicesUp =
+        immichHealth.status === 'up' &&
+        groupingHealth.status === 'up' &&
+        deduplicationHealth.status === 'up' &&
+        redisHealth.status === 'up';
 
-    res.status(200).json(response);
+      const response: HealthResponse = {
+        status: allServicesUp ? 'ok' : 'degraded',
+        services: {
+          immich: immichHealth,
+          grouping: groupingHealth,
+          deduplication: deduplicationHealth,
+          redis: redisHealth,
+        },
+      };
+
+      logger.info('Health check completed', { status: response.status });
+
+      // Return 503 for degraded status (important for load balancers and k8s)
+      const statusCode = response.status === 'ok' ? 200 : 503;
+      res.status(statusCode).json(response);
+    } catch (error) {
+      // Handle timeout or other errors
+      logger.error('Health check failed', { error: error instanceof Error ? error.message : String(error) });
+
+      const response: HealthResponse = {
+        status: 'degraded',
+        services: {
+          immich: {
+            status: 'down',
+            error: error instanceof Error ? error.message : String(error),
+          },
+          grouping: {
+            status: 'down',
+            error: error instanceof Error ? error.message : String(error),
+          },
+          deduplication: {
+            status: 'down',
+            error: error instanceof Error ? error.message : String(error),
+          },
+          redis: {
+            status: 'down',
+            error: error instanceof Error ? error.message : String(error),
+          },
+        },
+      };
+
+      res.status(503).json(response);
+    }
   });
 
   return router;
