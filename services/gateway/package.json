@@ -1,0 +1,6 @@
+{
+  "name": "api-gateway",
+  "version": "0.1.0",
+  "description": "API Gateway for Photo/Video Management System",
+  "private": true
+}

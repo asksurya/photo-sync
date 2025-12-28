@@ -1,0 +1,2 @@
+# Placeholder for Grouping Service requirements
+# Will be implemented in subsequent tasks
