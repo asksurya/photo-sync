@@ -18,6 +18,13 @@ COPY . .
 # Run tests during build
 RUN python -m pytest tests/ -v
 
+# Create non-root user
+RUN groupadd -g 1001 -r appuser && \
+    useradd -r -u 1001 -g appuser appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 # Expose API port
 EXPOSE 8001
 
