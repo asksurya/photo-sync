@@ -89,3 +89,26 @@ def test_group_member_relationship(db_session):
     assert member2 in group.members
     assert member1.group == group
     assert member2.group == group
+
+
+def test_cascade_delete_removes_members(db_session):
+    """Test that deleting a group cascades to members."""
+    group = FileGroup(group_type="raw_jpeg")
+    member = GroupMember(
+        group=group,
+        file_path="/data/photos/IMG_1234.JPG",
+        file_type="jpeg",
+        is_primary=True,
+        file_size=1024
+    )
+    db_session.add(group)
+    db_session.commit()
+
+    member_id = member.id
+
+    # Delete group
+    db_session.delete(group)
+    db_session.commit()
+
+    # Verify member was deleted
+    assert db_session.query(GroupMember).filter_by(id=member_id).first() is None

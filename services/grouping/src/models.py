@@ -1,5 +1,5 @@
 """Database models for grouping service."""
-from sqlalchemy import Column, String, DateTime, Boolean, BigInteger, ForeignKey, TypeDecorator, CHAR
+from sqlalchemy import Column, String, DateTime, Boolean, BigInteger, ForeignKey, TypeDecorator, CHAR, Index
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
@@ -61,11 +61,14 @@ class FileGroup(Base):
 class GroupMember(Base):
     """Represents a file that belongs to a group."""
     __tablename__ = "group_members"
+    __table_args__ = (
+        Index('ix_group_member_group_primary', 'group_id', 'is_primary'),
+    )
 
     id = Column(UUID(), primary_key=True, default=uuid.uuid4)
     group_id = Column(UUID(), ForeignKey("file_groups.group_id"), nullable=False)
     file_path = Column(String(512), nullable=False, unique=True)
-    file_type = Column(String(20), nullable=False)  # 'raw', 'jpeg', 'png', etc.
+    file_type = Column(String(20), nullable=False, index=True)  # 'raw', 'jpeg', 'png', etc.
     is_primary = Column(Boolean, nullable=False, default=False)
     file_size = Column(BigInteger, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
