@@ -1,17 +1,9 @@
 // services/gateway/src/clients/immich.ts
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { createLogger, format, transports } from 'winston';
+import { createLogger, format, transports, Logger } from 'winston';
 
 const VALIDATE_TOKEN_TIMEOUT_MS = 5000;
 const GET_ASSETS_TIMEOUT_MS = 30000;
-
-const logger = createLogger({
-  format: format.combine(
-    format.timestamp(),
-    format.json()
-  ),
-  transports: [new transports.Console()],
-});
 
 export interface TokenValidation {
   userId: string;
@@ -25,10 +17,19 @@ export interface Asset {
 
 export class ImmichClient {
   private client: AxiosInstance;
+  private logger: Logger;
 
   constructor(baseUrl: string) {
     this.client = axios.create({
       baseURL: baseUrl,
+    });
+
+    this.logger = createLogger({
+      format: format.combine(
+        format.timestamp(),
+        format.json()
+      ),
+      transports: [new transports.Console()],
     });
   }
 
@@ -50,17 +51,42 @@ export class ImmichClient {
         }
       );
 
-      logger.debug('Token validated successfully');
+      this.logger.debug('Token validated successfully');
       return response.data;
     } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 401) {
-        logger.error('Invalid token provided');
-        throw new Error('Invalid token');
+      // Use type guard instead of unsafe type casting
+      if (error instanceof AxiosError) {
+        // Handle different HTTP status codes
+        if (error.response?.status === 401) {
+          this.logger.error('Invalid token provided');
+          throw new Error('Token validation failed: Invalid token');
+        }
+        if (error.response?.status === 403) {
+          this.logger.error('Forbidden');
+          throw new Error('Token validation failed: Forbidden');
+        }
+        if (error.response?.status === 404) {
+          this.logger.error('Endpoint not found');
+          throw new Error('Token validation failed: Endpoint not found');
+        }
+        if (error.response?.status === 500) {
+          this.logger.error('Server error');
+          throw new Error('Token validation failed: Server error');
+        }
+        if (error.response?.status === 503) {
+          this.logger.error('Service unavailable');
+          throw new Error('Token validation failed: Service unavailable');
+        }
+        // Handle timeout
+        if (error.code === 'ECONNABORTED') {
+          this.logger.error('Request timeout');
+          throw new Error('Token validation failed: Request timeout');
+        }
       }
 
-      logger.error('Network error during token validation', { error });
-      throw error;
+      // Wrap all other errors with context
+      this.logger.error('Network error during token validation', { error });
+      throw new Error(`Token validation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -88,17 +114,42 @@ export class ImmichClient {
         timeout: GET_ASSETS_TIMEOUT_MS,
       });
 
-      logger.debug('Assets fetched successfully', { count: response.data.length });
+      this.logger.debug('Assets fetched successfully', { count: response.data.length });
       return response.data;
     } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 401) {
-        logger.error('Invalid token provided for asset fetch');
-        throw new Error('Invalid token');
+      // Use type guard instead of unsafe type casting
+      if (error instanceof AxiosError) {
+        // Handle different HTTP status codes
+        if (error.response?.status === 401) {
+          this.logger.error('Invalid token provided for asset fetch');
+          throw new Error('Asset fetch failed: Invalid token');
+        }
+        if (error.response?.status === 403) {
+          this.logger.error('Forbidden');
+          throw new Error('Asset fetch failed: Forbidden');
+        }
+        if (error.response?.status === 404) {
+          this.logger.error('Endpoint not found');
+          throw new Error('Asset fetch failed: Endpoint not found');
+        }
+        if (error.response?.status === 500) {
+          this.logger.error('Server error');
+          throw new Error('Asset fetch failed: Server error');
+        }
+        if (error.response?.status === 503) {
+          this.logger.error('Service unavailable');
+          throw new Error('Asset fetch failed: Service unavailable');
+        }
+        // Handle timeout
+        if (error.code === 'ECONNABORTED') {
+          this.logger.error('Request timeout');
+          throw new Error('Asset fetch failed: Request timeout');
+        }
       }
 
-      logger.error('Network error during asset fetch', { error });
-      throw error;
+      // Wrap all other errors with context
+      this.logger.error('Network error during asset fetch', { error });
+      throw new Error(`Asset fetch failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

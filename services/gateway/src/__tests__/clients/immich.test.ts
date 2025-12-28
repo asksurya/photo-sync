@@ -72,21 +72,70 @@ describe('ImmichClient', () => {
     });
 
     it('should throw error for invalid token (401)', async () => {
-      const axiosError = {
-        response: { status: 401 },
-        isAxiosError: true,
-      } as AxiosError;
+      const axiosError = new AxiosError('Unauthorized');
+      axiosError.response = { status: 401 } as any;
 
       mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
-      await expect(client.validateToken('invalid-token')).rejects.toThrow('Invalid token');
+      await expect(client.validateToken('invalid-token')).rejects.toThrow('Token validation failed: Invalid token');
+    });
+
+    it('should throw error for 403 Forbidden', async () => {
+      const axiosError = new AxiosError('Forbidden');
+      axiosError.response = { status: 403 } as any;
+
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Forbidden');
+    });
+
+    it('should throw error for 404 Not Found', async () => {
+      const axiosError = new AxiosError('Not Found');
+      axiosError.response = { status: 404 } as any;
+
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Endpoint not found');
+    });
+
+    it('should throw error for 500 Server Error', async () => {
+      const axiosError = new AxiosError('Server Error');
+      axiosError.response = { status: 500 } as any;
+
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Server error');
+    });
+
+    it('should throw error for 503 Service Unavailable', async () => {
+      const axiosError = new AxiosError('Service Unavailable');
+      axiosError.response = { status: 503 } as any;
+
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Service unavailable');
+    });
+
+    it('should throw error for timeout', async () => {
+      const axiosError = new AxiosError('Timeout');
+      axiosError.code = 'ECONNABORTED';
+
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Request timeout');
     });
 
     it('should throw error for network error', async () => {
       const networkError = new Error('Network Error');
       mockAxiosInstance.post.mockRejectedValueOnce(networkError);
 
-      await expect(client.validateToken('token')).rejects.toThrow('Network Error');
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: Network Error');
+    });
+
+    it('should throw error for non-Error object', async () => {
+      mockAxiosInstance.post.mockRejectedValueOnce('string error');
+
+      await expect(client.validateToken('token')).rejects.toThrow('Token validation failed: string error');
     });
 
     it('should throw error for empty token', async () => {
@@ -120,21 +169,70 @@ describe('ImmichClient', () => {
     });
 
     it('should throw error for invalid token (401)', async () => {
-      const axiosError = {
-        response: { status: 401 },
-        isAxiosError: true,
-      } as AxiosError;
+      const axiosError = new AxiosError('Unauthorized');
+      axiosError.response = { status: 401 } as any;
 
       mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
 
-      await expect(client.getAssets('invalid-token', 0, 100)).rejects.toThrow('Invalid token');
+      await expect(client.getAssets('invalid-token', 0, 100)).rejects.toThrow('Asset fetch failed: Invalid token');
+    });
+
+    it('should throw error for 403 Forbidden', async () => {
+      const axiosError = new AxiosError('Forbidden');
+      axiosError.response = { status: 403 } as any;
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Forbidden');
+    });
+
+    it('should throw error for 404 Not Found', async () => {
+      const axiosError = new AxiosError('Not Found');
+      axiosError.response = { status: 404 } as any;
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Endpoint not found');
+    });
+
+    it('should throw error for 500 Server Error', async () => {
+      const axiosError = new AxiosError('Server Error');
+      axiosError.response = { status: 500 } as any;
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Server error');
+    });
+
+    it('should throw error for 503 Service Unavailable', async () => {
+      const axiosError = new AxiosError('Service Unavailable');
+      axiosError.response = { status: 503 } as any;
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Service unavailable');
+    });
+
+    it('should throw error for timeout', async () => {
+      const axiosError = new AxiosError('Timeout');
+      axiosError.code = 'ECONNABORTED';
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Request timeout');
     });
 
     it('should throw error for network error', async () => {
       const networkError = new Error('Network Error');
       mockAxiosInstance.get.mockRejectedValueOnce(networkError);
 
-      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Network Error');
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Network Error');
+    });
+
+    it('should throw error for non-Error object', async () => {
+      mockAxiosInstance.get.mockRejectedValueOnce('string error');
+
+      await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: string error');
     });
 
     it('should throw error for empty token', async () => {
