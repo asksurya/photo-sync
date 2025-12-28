@@ -48,9 +48,9 @@ export function DuplicatesView() {
     return acc;
   }, {} as Record<string, EnrichedAsset[]>);
 
-  // Convert to array of groups
-  const duplicateGroups = Object.values(groupedDuplicates);
-  const groupCount = duplicateGroups.length;
+  // Convert to array of groups with their IDs
+  const duplicateGroupEntries = Object.entries(groupedDuplicates);
+  const groupCount = duplicateGroupEntries.length;
 
   // Empty state
   if (groupCount === 0) {
@@ -68,8 +68,8 @@ export function DuplicatesView() {
       </h1>
 
       <div className="space-y-6">
-        {duplicateGroups.map((group, index) => (
-          <DuplicateGroupCard key={group[0].duplicateGroupId || index} duplicates={group} />
+        {duplicateGroupEntries.map(([groupId, group]) => (
+          <DuplicateGroupCard key={groupId} duplicates={group} />
         ))}
       </div>
     </div>

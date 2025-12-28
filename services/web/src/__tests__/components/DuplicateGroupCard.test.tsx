@@ -135,4 +135,27 @@ describe('DuplicateGroupCard', () => {
 
     expect(screen.getByText(/perceptual_hash/i)).toBeInTheDocument();
   });
+
+  it('should handle assets without path by using id', () => {
+    const duplicatesWithoutPath: EnrichedAsset[] = [
+      {
+        id: 'asset-1',
+        type: 'IMAGE',
+        duplicateGroupId: 'dup-1',
+        similarityScore: 0.98
+      },
+      {
+        id: 'asset-2',
+        type: 'IMAGE',
+        duplicateGroupId: 'dup-1',
+        similarityScore: 0.98
+      }
+    ];
+
+    render(<DuplicateGroupCard duplicates={duplicatesWithoutPath} />);
+
+    const images = screen.getAllByRole('img');
+    expect(images[0]).toHaveAttribute('alt', 'asset-1');
+    expect(images[1]).toHaveAttribute('alt', 'asset-2');
+  });
 });
