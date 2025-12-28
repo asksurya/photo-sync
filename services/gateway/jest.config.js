@@ -11,6 +11,9 @@ module.exports = {
   coveragePathIgnorePatterns: [
     '/node_modules/'
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)'
+  ],
   coverageThreshold: {
     global: {
       branches: 80,

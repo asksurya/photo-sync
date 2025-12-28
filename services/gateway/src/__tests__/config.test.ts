@@ -15,7 +15,7 @@ describe('Config', () => {
   it('loads configuration from environment variables', () => {
     process.env.IMMICH_API_URL = 'http://test-immich:3001';
     process.env.GROUPING_API_URL = 'http://test-grouping:8000';
-    process.env.DEDUP_API_URL = 'http://test-dedup:8001';
+    process.env.DEDUPLICATION_API_URL = 'http://test-dedup:8001';
     process.env.REDIS_URL = 'redis://test-redis:6379';
 
     const config = new Config();
