@@ -44,6 +44,28 @@ def test_migration_creates_tables():
         assert "file_size" in columns
         assert "created_at" in columns
 
+        # Verify indexes exist
+        indexes = inspector.get_indexes("group_members")
+        index_names = [idx['name'] for idx in indexes]
+        assert "ix_group_member_group_primary" in index_names
+        assert "ix_group_members_file_type" in index_names
+
+        # Verify foreign key
+        fks = inspector.get_foreign_keys("group_members")
+        assert len(fks) == 1
+        assert fks[0]['referred_table'] == 'file_groups'
+
+        # Verify unique constraint on file_path
+        unique_constraints = inspector.get_unique_constraints("group_members")
+        # Note: file_path unique constraint may be in indexes or unique_constraints depending on SQLite version
+        file_path_is_unique = (
+            any('file_path' in idx.get('column_names', []) and idx.get('unique', False)
+                for idx in indexes) or
+            any('file_path' in uc.get('column_names', [])
+                for uc in unique_constraints)
+        )
+        assert file_path_is_unique, "file_path should have unique constraint"
+
     finally:
         # Cleanup
         if os.path.exists(db_path):

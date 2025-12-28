@@ -40,7 +40,7 @@ def upgrade() -> None:
     sa.Column('is_primary', sa.Boolean(), nullable=False),
     sa.Column('file_size', sa.BigInteger(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['group_id'], ['file_groups.group_id'], ),
+    sa.ForeignKeyConstraint(['group_id'], ['file_groups.group_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('file_path')
     )
