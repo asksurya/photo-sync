@@ -6,6 +6,14 @@ import { createLogger, format, transports, Logger } from 'winston';
 
 const TOKEN_CACHE_TTL_SECONDS = 300;
 
+const logger: Logger = createLogger({
+  format: format.combine(
+    format.timestamp(),
+    format.json()
+  ),
+  transports: [new transports.Console()],
+});
+
 // Augment Express Request type to include user
 declare global {
   namespace Express {
@@ -19,14 +27,6 @@ export function createAuthMiddleware(
   immichClient: ImmichClient,
   redisCache: RedisCache
 ) {
-  const logger: Logger = createLogger({
-    format: format.combine(
-      format.timestamp(),
-      format.json()
-    ),
-    transports: [new transports.Console()],
-  });
-
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Step 1: Check for Authorization header
