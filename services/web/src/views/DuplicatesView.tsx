@@ -1,5 +1,4 @@
 // services/web/src/views/DuplicatesView.tsx
-import React from 'react';
 import { useAssets } from '../hooks/useAssets';
 import { DuplicateGroupCard } from '../components/DuplicateGroupCard';
 import { EnrichedAsset } from '../lib/apiClient';

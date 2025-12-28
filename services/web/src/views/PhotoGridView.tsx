@@ -1,5 +1,5 @@
 // services/web/src/views/PhotoGridView.tsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useAssets } from '../hooks/useAssets';
 import { PhotoTimeline } from '../components/PhotoTimeline';

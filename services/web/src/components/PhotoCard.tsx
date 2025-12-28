@@ -1,5 +1,4 @@
 // services/web/src/components/PhotoCard.tsx
-import React from 'react';
 import { EnrichedAsset } from '../lib/apiClient';
 
 export interface PhotoCardProps {

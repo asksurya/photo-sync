@@ -1,5 +1,4 @@
 // services/web/src/components/VersionSwitcherModal.tsx
-import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { EnrichedAsset } from '../lib/apiClient';
 

@@ -1,5 +1,4 @@
 // services/web/src/components/PhotoTimeline.tsx
-import React from 'react';
 import { EnrichedAsset } from '../lib/apiClient';
 import { PhotoCard } from './PhotoCard';
 
