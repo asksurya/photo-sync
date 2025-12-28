@@ -50,7 +50,7 @@ export class DeduplicationClient {
     try {
       const response = await this.client.get<DuplicateGroup[]>('/duplicates', {
         params: {
-          paths: paths.join(','),
+          paths: paths,
         },
         timeout: GET_DUPLICATES_TIMEOUT_MS,
       });
@@ -62,24 +62,24 @@ export class DeduplicationClient {
       if (error instanceof AxiosError) {
         // Handle different HTTP status codes
         if (error.response?.status === 400) {
-          this.logger.error('Bad request');
+          this.logger.error('Bad request to duplicates endpoint');
           throw new Error('Get duplicates failed: Bad request');
         }
         if (error.response?.status === 404) {
-          this.logger.error('Endpoint not found');
+          this.logger.error('Duplicates endpoint not found');
           throw new Error('Get duplicates failed: Endpoint not found');
         }
         if (error.response?.status === 500) {
-          this.logger.error('Server error');
+          this.logger.error('Server error from duplicates endpoint');
           throw new Error('Get duplicates failed: Server error');
         }
         if (error.response?.status === 503) {
-          this.logger.error('Service unavailable');
+          this.logger.error('Duplicates service unavailable');
           throw new Error('Get duplicates failed: Service unavailable');
         }
         // Handle timeout
         if (error.code === 'ECONNABORTED') {
-          this.logger.error('Request timeout');
+          this.logger.error('Request timeout for duplicates endpoint');
           throw new Error('Get duplicates failed: Request timeout');
         }
       }

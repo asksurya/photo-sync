@@ -78,7 +78,7 @@ describe('GroupingClient', () => {
 
       expect(result).toEqual(mockGroups);
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/groups', {
-        params: { paths: '/path/to/file1.jpg,/path/to/file2.jpg' },
+        params: { paths: ['/path/to/file1.jpg', '/path/to/file2.jpg'] },
         timeout: 30000,
       });
     });
@@ -99,7 +99,7 @@ describe('GroupingClient', () => {
 
       expect(result).toEqual(mockGroups);
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/groups', {
-        params: { paths: '/path/to/file1.jpg' },
+        params: { paths: ['/path/to/file1.jpg'] },
         timeout: 30000,
       });
     });

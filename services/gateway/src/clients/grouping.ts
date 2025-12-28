@@ -51,7 +51,7 @@ export class GroupingClient {
     try {
       const response = await this.client.get<FileGroup[]>('/groups', {
         params: {
-          paths: paths.join(','),
+          paths: paths,
         },
         timeout: GET_GROUPS_TIMEOUT_MS,
       });
@@ -63,24 +63,24 @@ export class GroupingClient {
       if (error instanceof AxiosError) {
         // Handle different HTTP status codes
         if (error.response?.status === 400) {
-          this.logger.error('Bad request');
+          this.logger.error('Bad request to groups endpoint');
           throw new Error('Get groups failed: Bad request');
         }
         if (error.response?.status === 404) {
-          this.logger.error('Endpoint not found');
+          this.logger.error('Groups endpoint not found');
           throw new Error('Get groups failed: Endpoint not found');
         }
         if (error.response?.status === 500) {
-          this.logger.error('Server error');
+          this.logger.error('Server error from groups endpoint');
           throw new Error('Get groups failed: Server error');
         }
         if (error.response?.status === 503) {
-          this.logger.error('Service unavailable');
+          this.logger.error('Groups service unavailable');
           throw new Error('Get groups failed: Service unavailable');
         }
         // Handle timeout
         if (error.code === 'ECONNABORTED') {
-          this.logger.error('Request timeout');
+          this.logger.error('Request timeout for groups endpoint');
           throw new Error('Get groups failed: Request timeout');
         }
       }
