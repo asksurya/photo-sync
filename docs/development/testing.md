@@ -1,5 +1,7 @@
 # Testing Guidelines
 
+> **Note:** This project is currently in initial setup phase. Testing infrastructure is configured and basic tests are in place, but comprehensive test coverage will be built alongside core feature implementation following TDD principles.
+
 ## Test-Driven Development (TDD)
 
 All features MUST follow TDD:
@@ -15,7 +17,10 @@ All features MUST follow TDD:
 
 - **Target**: 100% coverage
 - **Exceptions**: Only extreme edge cases that cannot be tested
-- **Tools**: pytest (Python), jest/vitest (JavaScript/TypeScript)
+- **Tools**:
+  - pytest (Python services: grouping, deduplication)
+  - Jest (API Gateway)
+  - Vitest (Web UI)
 
 ## Test Structure
 
@@ -70,11 +75,15 @@ npm test -- --coverage
 ### Watch Mode
 
 ```bash
-# Python
-pytest-watch
+# Python (using pytest's built-in watch with file monitoring)
+# Install pytest-xdist for better watch performance (optional)
+pytest --looponfail
 
-# TypeScript
-npm run test:watch
+# Gateway (Jest)
+cd services/gateway && npm run test:watch
+
+# Web (Vitest)
+cd services/web && npm run test:watch
 ```
 
 ## Test Data

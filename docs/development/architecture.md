@@ -1,5 +1,7 @@
 # Architecture Overview
 
+> **Note:** This document describes the target architecture for the photo-sync system. The project is currently in initial setup phase with services scaffolded and testing infrastructure in place. Core functionality described below is planned but not yet implemented.
+
 ## System Components
 
 ### Immich (Core)
@@ -57,7 +59,9 @@ Merged Response → Web UI
 
 ## Database Schema
 
-### Grouping Service
+> **Note:** The schemas below represent the planned database structure. These tables are not yet created. Database migrations will be implemented using Alembic during core feature development.
+
+### Grouping Service (Planned)
 
 ```sql
 file_groups (
@@ -75,7 +79,7 @@ group_members (
 )
 ```
 
-### Deduplication Service
+### Deduplication Service (Planned)
 
 ```sql
 duplicate_groups (

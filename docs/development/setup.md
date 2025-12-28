@@ -1,5 +1,7 @@
 # Development Setup
 
+> **Note:** This project is currently in initial setup phase. Services are scaffolded with configuration and testing infrastructure in place, but core functionality is not yet implemented. This documentation describes the target architecture and setup process.
+
 ## Prerequisites
 
 - Docker and Docker Compose
@@ -92,6 +94,10 @@ cd services/web && npm test
 
 ## Database Migrations
 
+> **Note:** Database migrations are not yet implemented. Alembic is installed but not configured. Migration setup will be completed during core feature development.
+
+<!-- Uncomment when migrations are implemented:
+
 ### Grouping Service
 
 ```bash
@@ -105,3 +111,4 @@ alembic upgrade head
 cd services/deduplication
 alembic upgrade head
 ```
+-->
