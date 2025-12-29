@@ -108,6 +108,40 @@ def create_import_batch(
     )
 
 
+def get_immich_headers() -> Dict[str, str]:
+    """Get headers for Immich API requests with authentication."""
+    headers = {"Accept": "application/json"}
+    if settings.IMMICH_API_KEY:
+        headers["x-api-key"] = settings.IMMICH_API_KEY
+    return headers
+
+
+def fetch_asset_metadata(asset_id: str) -> Dict[str, Any]:
+    """
+    Fetch asset metadata from Immich API.
+
+    Args:
+        asset_id: Immich asset ID
+
+    Returns:
+        Asset metadata dictionary
+
+    Raises:
+        HTTPException: If metadata cannot be fetched
+    """
+    try:
+        url = f"{settings.IMMICH_API_URL}/api/asset/{asset_id}"
+        response = httpx.get(url, headers=get_immich_headers(), timeout=10.0)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch metadata for asset {asset_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch asset metadata from Immich: {str(e)}"
+        )
+
+
 def fetch_image_from_immich(asset_id: str) -> bytes:
     """
     Fetch image bytes from Immich API.
@@ -123,7 +157,9 @@ def fetch_image_from_immich(asset_id: str) -> bytes:
     """
     try:
         url = f"{settings.IMMICH_API_URL}/api/asset/file/{asset_id}"
-        response = httpx.get(url, timeout=30.0)
+        headers = get_immich_headers()
+        headers["Accept"] = "application/octet-stream"
+        response = httpx.get(url, headers=headers, timeout=30.0)
         response.raise_for_status()
         return response.content
     except Exception as e:
@@ -159,6 +195,9 @@ def analyze_batch(
 
     for asset_id in batch.asset_ids:
         try:
+            # Fetch asset metadata from Immich (includes timestamp, EXIF data, etc.)
+            metadata = fetch_asset_metadata(asset_id)
+
             # Fetch image from Immich
             image_bytes = fetch_image_from_immich(asset_id)
 
@@ -176,11 +215,20 @@ def analyze_batch(
             )
             db.add(quality_score)
 
-            # Store metadata for burst detection (using timestamp from creation time as placeholder)
-            # In real implementation, would fetch actual EXIF timestamp from Immich
+            # Parse timestamp from metadata for burst detection
+            # Immich stores timestamps in fileCreatedAt or exifInfo.dateTimeOriginal
+            timestamp_str = metadata.get('fileCreatedAt') or metadata.get('exifInfo', {}).get('dateTimeOriginal')
+            if timestamp_str:
+                from dateutil import parser
+                timestamp = parser.parse(timestamp_str)
+            else:
+                # Fallback to current time if no timestamp available
+                timestamp = datetime.utcnow()
+
+            # Store metadata for burst detection
             asset_metadata_list.append({
                 'id': asset_id,
-                'timestamp': datetime.utcnow(),  # Placeholder - would be EXIF timestamp
+                'timestamp': timestamp,
                 'quality_score': quality_result.get('overall_quality', 0.0)
             })
 

@@ -116,14 +116,20 @@ def test_analyze_batch_success(client, db_session):
 
     mock_image_bytes = create_mock_image()
 
-    # Mock Immich API to return image bytes
-    with patch("src.main.httpx.get") as mock_get:
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = mock_image_bytes
-        mock_get.return_value = mock_response
+    # Mock Immich API to return metadata and image bytes
+    with patch("src.main.fetch_asset_metadata") as mock_metadata:
+        with patch("src.main.fetch_image_from_immich") as mock_fetch_image:
+            # Mock metadata responses with timestamps for burst detection
+            base_time = "2025-01-01T12:00:00Z"
+            mock_metadata.side_effect = [
+                {"fileCreatedAt": "2025-01-01T12:00:00Z", "id": "asset-1"},
+                {"fileCreatedAt": "2025-01-01T12:00:00.5Z", "id": "asset-2"},
+                {"fileCreatedAt": "2025-01-01T12:00:01Z", "id": "asset-3"}
+            ]
+            # Mock image bytes for all assets
+            mock_fetch_image.return_value = mock_image_bytes
 
-        response = client.post(f"/batches/{batch_id}/analyze")
+            response = client.post(f"/batches/{batch_id}/analyze")
 
     assert response.status_code == 200
     data = response.json()
@@ -171,14 +177,15 @@ def test_analyze_batch_with_corrupted_image(client, db_session):
     db_session.commit()
     batch_id = batch.id
 
-    # Mock Immich API to return corrupted image bytes
-    with patch("src.main.httpx.get") as mock_get:
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b"corrupted image data"
-        mock_get.return_value = mock_response
+    # Mock Immich API to return metadata and corrupted image bytes
+    with patch("src.main.fetch_asset_metadata") as mock_metadata:
+        with patch("src.main.fetch_image_from_immich") as mock_fetch_image:
+            # Mock metadata
+            mock_metadata.return_value = {"fileCreatedAt": "2025-01-01T12:00:00Z", "id": "asset-corrupted"}
+            # Mock corrupted image bytes
+            mock_fetch_image.return_value = b"corrupted image data"
 
-        response = client.post(f"/batches/{batch_id}/analyze")
+            response = client.post(f"/batches/{batch_id}/analyze")
 
     assert response.status_code == 200
     data = response.json()
