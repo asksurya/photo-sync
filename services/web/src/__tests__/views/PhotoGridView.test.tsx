@@ -81,7 +81,7 @@ describe('PhotoGridView', () => {
 
   it('should render PhotoTimeline with assets', () => {
     const mockAssets = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
 
     vi.mocked(useAssetsHook.useAssets).mockReturnValue({
@@ -101,7 +101,7 @@ describe('PhotoGridView', () => {
 
   it('should show "Scroll for more" when hasNextPage is true and not fetching', () => {
     const mockAssets = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
 
     vi.mocked(useAssetsHook.useAssets).mockReturnValue({
@@ -120,7 +120,7 @@ describe('PhotoGridView', () => {
 
   it('should show loading indicator when fetching next page', () => {
     const mockAssets = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
 
     vi.mocked(useAssetsHook.useAssets).mockReturnValue({
@@ -139,7 +139,7 @@ describe('PhotoGridView', () => {
 
   it('should not show sentinel when no more pages', () => {
     const mockAssets = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
 
     vi.mocked(useAssetsHook.useAssets).mockReturnValue({
@@ -159,7 +159,7 @@ describe('PhotoGridView', () => {
 
   it('should call fetchNextPage when sentinel comes into view', async () => {
     const mockAssets = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
     const fetchNextPage = vi.fn();
 
@@ -188,10 +188,10 @@ describe('PhotoGridView', () => {
 
   it('should flatten multiple pages of assets', () => {
     const page1 = [
-      { id: '1', path: '/photo1.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '1', path: '/photo1.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
     const page2 = [
-      { id: '2', path: '/photo2.jpg', type: 'IMAGE', createdAt: new Date().toISOString() }
+      { id: '2', path: '/photo2.jpg', type: 'IMAGE', fileCreatedAt: new Date().toISOString() }
     ];
 
     vi.mocked(useAssetsHook.useAssets).mockReturnValue({
