@@ -17,7 +17,7 @@ Self-hosted photo/video management solution built on Immich with intelligent gro
 - **Grouping Service**: Detects RAW+JPEG pairs and related files
 - **Deduplication Service**: Finds exact and near-duplicate images
 - **API Gateway**: Aggregates data from all services
-- **Web UI**: Enhanced interface with grouping/dedup features
+- **Web UI**: Immich-inspired interface with grouping/dedup features
 
 ## Quick Start
 
@@ -77,7 +77,7 @@ nano .env.prod  # Configure your settings
 ## Architecture
 
 - **Caddy**: Reverse proxy with automatic HTTPS
-- **Web UI**: React/Vite with nginx
+- **Web UI**: React/Vite with Immich design system (dark theme, Material Design Icons)
 - **API Gateway**: Node.js/Express with Redis caching
 - **Backend Services**: Immich, Grouping, Deduplication
 - **Databases**: PostgreSQL (Immich + Custom)
