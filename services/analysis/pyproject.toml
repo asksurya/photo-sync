@@ -17,7 +17,7 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/tests/*", "*/__pycache__/*"]
+omit = ["*/tests/*", "*/__pycache__/*", "alembic/*"]
 
 [tool.coverage.report]
 exclude_lines = [
