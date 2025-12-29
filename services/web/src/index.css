@@ -1,6 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Immich color palette for Tailwind v4 */
+  --color-immich-bg: #000000;
+  --color-immich-sidebar: #0f0f0f;
+  --color-immich-card: #1a1a1a;
+  --color-immich-hover: #2a2a2a;
+  --color-immich-input: #374151;
+  --color-immich-border: #374151;
+  --color-immich-border-focus: #3b82f6;
+  --color-immich-text: #ffffff;
+  --color-immich-text-secondary: #d1d5db;
+  --color-immich-text-muted: #9ca3af;
+  --color-immich-text-disabled: #6b7280;
+  --color-immich-accent: #3b82f6;
+  --color-immich-success: #10b981;
+  --color-immich-warning: #eab308;
+  --color-immich-error: #ef4444;
+}
 
 @layer base {
   body {
