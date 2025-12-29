@@ -19,17 +19,31 @@ This directory contains screenshots for documentation and user guides showing th
 ✅ **06-sidebar-navigation.png** - Sidebar navigation closeup (300x700)
 ✅ **08-help-expanded.png** - Login with help section expanded (1622x757)
 
-### Needed for Documentation
+### Still Needed
 
-⏳ **05-duplicates-with-groups.png** - Duplicates with sample data
+⏳ **05-duplicates-with-groups.png** - Duplicates with sample data (requires mock duplicate data)
 ⏳ **07-user-menu.png** - User menu dropdown
 
 ## How to Capture
 
-1. Start dev server: `cd services/web && npm run dev`
-2. Open http://localhost:5173
-3. Navigate and capture screenshots (PNG, ~1622x757px)
-4. Update [SCREENSHOTS.md](SCREENSHOTS.md) with details
+### Using Mock Data (for screenshots without real Immich backend)
+
+1. Enable mock data in `services/web/src/hooks/useAssets.ts`:
+   ```typescript
+   const USE_MOCK_DATA = true;
+   ```
+2. Start dev server: `cd services/web && npm run dev`
+3. Open http://localhost:5173
+4. Navigate and capture screenshots (PNG, ~1622x757px)
+5. Disable mock data when done: `const USE_MOCK_DATA = false;`
+
+### Using Real Immich Backend
+
+1. Ensure Immich is running with test photos
+2. Get API token from Immich (User Settings → API Keys)
+3. Start dev server: `cd services/web && npm run dev`
+4. Open http://localhost:5173, login with API token
+5. Navigate and capture screenshots
 
 ## Specifications
 

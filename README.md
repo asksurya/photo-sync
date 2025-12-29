@@ -78,6 +78,9 @@ nano .env.prod  # Configure your settings
 
 - **Caddy**: Reverse proxy with automatic HTTPS
 - **Web UI**: React/Vite with Immich design system (dark theme, Material Design Icons)
+  - Immich API token authentication with localStorage persistence
+  - Mock data system for screenshot capture and testing
+  - Timeline and duplicate photo views
 - **API Gateway**: Node.js/Express with Redis caching
 - **Backend Services**: Immich, Grouping, Deduplication
 - **Databases**: PostgreSQL (Immich + Custom)
