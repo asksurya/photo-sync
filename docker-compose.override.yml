@@ -29,7 +29,7 @@ services:
   # Immich - expose for direct access
   immich-server:
     ports:
-      - "2283:3001"
+      - "2283:2283"
 
   # Custom postgres - expose for debugging
   custom-postgres:
