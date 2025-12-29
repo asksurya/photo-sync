@@ -21,6 +21,12 @@ Self-hosted photo/video management solution built on Immich with intelligent gro
 
 ## Quick Start
 
+**Platform-specific guides:**
+- [macOS Quick Start](docs/QUICKSTART-MAC.md) - Homebrew, Docker Desktop, development setup
+- [Windows Quick Start](docs/QUICKSTART-WINDOWS.md) - WSL 2, Docker Desktop, PowerShell commands
+
+**Quick setup (all platforms):**
+
 ```bash
 cp .env.example .env
 # Edit .env with your settings
