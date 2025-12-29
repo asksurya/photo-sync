@@ -11,11 +11,14 @@ This directory contains screenshots for documentation and user guides showing th
 ✅ **01-login.png** - Login page with Immich dark theme (ss_3656dkayg)
 ✅ **Immich reference screenshots** - For design comparison (ss_06528dr52, ss_07947gr9d, ss_8304est2i)
 
+### Captured (December 29, 2025)
+
+✅ **03-timeline-with-photos.png** - Timeline with photo grid (1622x757)
+✅ **04-duplicates-empty.png** - Duplicates empty state (1622x757)
+
 ### Needed for Documentation
 
 ⏳ **02-timeline-empty.png** - Empty timeline after login
-⏳ **03-timeline-with-photos.png** - Timeline with photo grid
-⏳ **04-duplicates-empty.png** - Duplicates empty state
 ⏳ **05-duplicates-with-groups.png** - Duplicates with sample data
 
 ## How to Capture

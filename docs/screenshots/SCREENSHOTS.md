@@ -93,17 +93,21 @@ To complete the Photo Sync documentation with Immich-styled UI:
    - Empty state message in main content area
    - Status: ⏳ Pending
 
-2. **03-timeline-with-photos.png** - Timeline view with photos loaded
+2. **03-timeline-with-photos.png** - Timeline view with photos loaded ✅
    - Sidebar visible on left
    - Top bar with search and user menu
    - Photo grid with date headers
-   - Sample photos displayed
-   - Status: ⏳ Pending
+   - Sample photos displayed (or error state with proper UI layout)
+   - Status: ✅ Captured
+   - **Dimensions**: 1622x757 pixels
+   - **Date**: December 29, 2025
 
-3. **04-duplicates-empty.png** - Duplicates view with no duplicates
+3. **04-duplicates-empty.png** - Duplicates view with no duplicates ✅
    - Sidebar with Duplicates tab active
-   - Empty state: "No duplicate groups found"
-   - Status: ⏳ Pending
+   - Empty state or error message with proper UI layout
+   - Status: ✅ Captured
+   - **Dimensions**: 1622x757 pixels
+   - **Date**: December 29, 2025
 
 4. **05-duplicates-with-groups.png** - Duplicates view with sample groups
    - Duplicate group cards showing similarity scores
