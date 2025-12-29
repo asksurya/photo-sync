@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from contextlib import asynccontextmanager
 from .database import get_db, engine, Base
 from .config import settings
+from .models import ImportBatch
+from .schemas import ImportBatchCreate, ImportBatchResponse
 import logging
+from datetime import datetime
 
 logging.basicConfig(level=settings.LOG_LEVEL)
 logger = logging.getLogger(__name__)
@@ -64,3 +67,35 @@ def health(db: Session = Depends(get_db)):
         "service": "analysis",
         "database": db_status
     }
+
+
+@app.post("/batches", response_model=ImportBatchResponse, status_code=status.HTTP_201_CREATED)
+def create_import_batch(
+    batch_data: ImportBatchCreate,
+    db: Session = Depends(get_db)
+):
+    """Create a new import batch for analysis"""
+    # Validate that asset_ids is not empty
+    if not batch_data.asset_ids:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="asset_ids cannot be empty"
+        )
+
+    # Create import batch
+    import_batch = ImportBatch(
+        immich_user_id=batch_data.immich_user_id,
+        status="processing",
+        total_assets=len(batch_data.asset_ids),
+        analyzed_assets=0,
+        skipped_assets=0
+    )
+
+    db.add(import_batch)
+    db.commit()
+    db.refresh(import_batch)
+
+    return ImportBatchResponse(
+        batch_id=import_batch.id,
+        status=import_batch.status
+    )
