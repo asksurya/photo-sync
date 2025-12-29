@@ -11,11 +11,14 @@ export function PhotoCard({ asset }: PhotoCardProps) {
   const hasDuplicate = !!asset.duplicateGroupId;
   const versionCount = hasGroup ? (asset.alternateVersions?.length || 0) + 1 : 1;
 
+  // Extract filename from path for alt text
+  const filename = asset.path.split('/').pop() || 'Photo';
+
   return (
     <div className="group relative aspect-square overflow-hidden rounded-[6px] bg-immich-card cursor-pointer transition-transform duration-150 hover:scale-102">
       <img
         src={`/api/immich/assets/${asset.id}/thumbnail`}
-        alt="Photo"
+        alt={filename}
         className="w-full h-full object-cover"
         loading="lazy"
       />
