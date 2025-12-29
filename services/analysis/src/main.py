@@ -273,3 +273,25 @@ def get_quality_scores(
     ).all()
 
     return scores
+
+
+@app.get("/batches/{batch_id}/bursts", response_model=list[BurstSequenceResponse])
+def get_bursts(
+    batch_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Retrieve burst sequences for a batch"""
+    # Verify batch exists
+    batch = db.query(ImportBatch).filter(ImportBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Import batch {batch_id} not found"
+        )
+
+    # Query burst sequences
+    bursts = db.query(BurstSequence).filter(
+        BurstSequence.import_batch_id == batch_id
+    ).all()
+
+    return bursts

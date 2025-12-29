@@ -344,3 +344,81 @@ def test_get_quality_scores_success(client, db_session):
     assert data[2]["is_corrupted"] is True
     assert data[2]["blur_score"] is None
     assert data[2]["exposure_score"] is None
+
+
+def test_get_bursts_not_found(client):
+    """Test getting bursts for non-existent batch returns 404"""
+    batch_id = "00000000-0000-0000-0000-000000000000"
+    response = client.get(f"/batches/{batch_id}/bursts")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_bursts_empty(client, db_session):
+    """Test getting bursts for batch with no burst sequences"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1"],
+        status="complete",
+        total_assets=1,
+        analyzed_assets=1,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    response = client.get(f"/batches/{batch_id}/bursts")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+
+
+def test_get_bursts_success(client, db_session):
+    """Test getting bursts for batch with burst sequences"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1", "asset-2", "asset-3", "asset-4", "asset-5"],
+        status="complete",
+        total_assets=5,
+        analyzed_assets=5,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    # Add burst sequences
+    bursts = [
+        BurstSequence(
+            import_batch_id=batch_id,
+            immich_asset_ids=["asset-1", "asset-2", "asset-3"],
+            recommended_asset_id="asset-2"
+        ),
+        BurstSequence(
+            import_batch_id=batch_id,
+            immich_asset_ids=["asset-4", "asset-5"],
+            recommended_asset_id="asset-5"
+        )
+    ]
+    for burst in bursts:
+        db_session.add(burst)
+    db_session.commit()
+
+    response = client.get(f"/batches/{batch_id}/bursts")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+
+    # Check first burst
+    assert len(data[0]["immich_asset_ids"]) == 3
+    assert data[0]["recommended_asset_id"] == "asset-2"
+    assert "asset-1" in data[0]["immich_asset_ids"]
+    assert "asset-2" in data[0]["immich_asset_ids"]
+    assert "asset-3" in data[0]["immich_asset_ids"]
+
+    # Check second burst
+    assert len(data[1]["immich_asset_ids"]) == 2
+    assert data[1]["recommended_asset_id"] == "asset-5"
