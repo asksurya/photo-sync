@@ -75,6 +75,7 @@ class ImportBatch(Base):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     immich_user_id = Column(String(255), nullable=False, index=True)
+    asset_ids = Column(StringArray, nullable=False)
     created_at = Column(TIMESTAMP, default=func.now())
     status = Column(String(20), nullable=False, index=True)
     total_assets = Column(Integer, nullable=False)

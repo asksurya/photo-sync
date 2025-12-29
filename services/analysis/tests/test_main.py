@@ -1,7 +1,11 @@
 import pytest
+import io
+from PIL import Image
 from unittest.mock import patch, MagicMock
 from src.main import lifespan, app
+from src.models import ImportBatch, AssetQualityScore, BurstSequence
 from sqlalchemy.exc import OperationalError
+from datetime import datetime, timedelta
 
 
 def test_health_endpoint(client):
@@ -77,3 +81,114 @@ def test_create_import_batch_empty_assets(client):
     }
     response = client.post("/batches", json=payload)
     assert response.status_code == 422  # Validation error
+
+
+def test_analyze_batch_not_found(client):
+    """Test analyzing a non-existent batch returns 404"""
+    batch_id = "00000000-0000-0000-0000-000000000000"
+    response = client.post(f"/batches/{batch_id}/analyze")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_analyze_batch_success(client, db_session):
+    """Test successful batch analysis"""
+    # Create a batch with some assets
+    asset_ids = ["asset-1", "asset-2", "asset-3"]
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=asset_ids,
+        status="processing",
+        total_assets=3,
+        analyzed_assets=0,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    # Create mock image bytes
+    def create_mock_image():
+        img = Image.new('RGB', (100, 100), color='red')
+        buffer = io.BytesIO()
+        img.save(buffer, format='JPEG')
+        return buffer.getvalue()
+
+    mock_image_bytes = create_mock_image()
+
+    # Mock Immich API to return image bytes
+    with patch("src.main.httpx.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = mock_image_bytes
+        mock_get.return_value = mock_response
+
+        response = client.post(f"/batches/{batch_id}/analyze")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "complete"
+    assert data["total_assets"] == 3
+    assert data["analyzed_assets"] == 3
+
+    # Refresh session to see changes committed by endpoint
+    db_session.expire_all()
+
+    # Verify quality scores were created
+    scores = db_session.query(AssetQualityScore).filter_by(import_batch_id=batch_id).all()
+    assert len(scores) == 3
+    for score in scores:
+        assert score.overall_quality is not None
+        assert score.blur_score is not None
+        assert score.exposure_score is not None
+
+    # Verify burst sequence was created (3 photos within 2 seconds = burst)
+    # Note: Since we're using datetime.utcnow() as placeholder timestamps,
+    # all photos will have very close timestamps and form a burst
+    bursts = db_session.query(BurstSequence).filter_by(import_batch_id=batch_id).all()
+    assert len(bursts) == 1
+    assert len(bursts[0].immich_asset_ids) == 3
+    assert bursts[0].recommended_asset_id is not None
+
+    # Verify batch status was updated
+    updated_batch = db_session.query(ImportBatch).filter_by(id=batch_id).first()
+    assert updated_batch.status == "complete"
+    assert updated_batch.analyzed_assets == 3
+
+
+def test_analyze_batch_with_corrupted_image(client, db_session):
+    """Test batch analysis with corrupted image (should mark as corrupted)"""
+    asset_ids = ["asset-corrupted"]
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=asset_ids,
+        status="processing",
+        total_assets=1,
+        analyzed_assets=0,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    # Mock Immich API to return corrupted image bytes
+    with patch("src.main.httpx.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b"corrupted image data"
+        mock_get.return_value = mock_response
+
+        response = client.post(f"/batches/{batch_id}/analyze")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "complete"
+
+    # Refresh session to see changes committed by endpoint
+    db_session.expire_all()
+
+    # Verify quality score was created marking it as corrupted
+    score = db_session.query(AssetQualityScore).filter_by(import_batch_id=batch_id).first()
+    assert score is not None
+    assert score.is_corrupted is True
+    assert score.overall_quality == 0.0
