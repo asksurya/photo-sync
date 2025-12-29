@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     IMMICH_API_URL: str = "http://immich_server:2283"
     API_PORT: int = 8002
     LOG_LEVEL: str = "INFO"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
 
 
 settings = Settings()
