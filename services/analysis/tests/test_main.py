@@ -250,3 +250,97 @@ def test_get_batch_status_complete(client, db_session):
     assert data["analyzed_assets"] == 2
     assert data["skipped_assets"] == 0
     assert data["progress_percent"] == 100.0
+
+
+def test_get_quality_scores_not_found(client):
+    """Test getting quality scores for non-existent batch returns 404"""
+    batch_id = "00000000-0000-0000-0000-000000000000"
+    response = client.get(f"/batches/{batch_id}/quality-scores")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_quality_scores_empty(client, db_session):
+    """Test getting quality scores for batch with no scores"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1"],
+        status="processing",
+        total_assets=1,
+        analyzed_assets=0,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    response = client.get(f"/batches/{batch_id}/quality-scores")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data == []
+
+
+def test_get_quality_scores_success(client, db_session):
+    """Test getting quality scores for batch with scores"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1", "asset-2", "asset-3"],
+        status="complete",
+        total_assets=3,
+        analyzed_assets=3,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    # Add quality scores
+    scores = [
+        AssetQualityScore(
+            immich_asset_id="asset-1",
+            import_batch_id=batch_id,
+            blur_score=85.5,
+            exposure_score=92.0,
+            overall_quality=88.0,
+            is_corrupted=False
+        ),
+        AssetQualityScore(
+            immich_asset_id="asset-2",
+            import_batch_id=batch_id,
+            blur_score=45.0,
+            exposure_score=50.0,
+            overall_quality=47.0,
+            is_corrupted=False
+        ),
+        AssetQualityScore(
+            immich_asset_id="asset-3",
+            import_batch_id=batch_id,
+            blur_score=None,
+            exposure_score=None,
+            overall_quality=0.0,
+            is_corrupted=True
+        )
+    ]
+    for score in scores:
+        db_session.add(score)
+    db_session.commit()
+
+    response = client.get(f"/batches/{batch_id}/quality-scores")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 3
+
+    # Check first score
+    assert data[0]["immich_asset_id"] == "asset-1"
+    assert data[0]["blur_score"] == 85.5
+    assert data[0]["exposure_score"] == 92.0
+    assert data[0]["overall_quality"] == 88.0
+    assert data[0]["is_corrupted"] is False
+
+    # Check corrupted score
+    assert data[2]["immich_asset_id"] == "asset-3"
+    assert data[2]["is_corrupted"] is True
+    assert data[2]["blur_score"] is None
+    assert data[2]["exposure_score"] is None

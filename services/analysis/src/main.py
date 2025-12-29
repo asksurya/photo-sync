@@ -9,7 +9,7 @@ import httpx
 from .database import get_db, engine, Base
 from .config import settings
 from .models import ImportBatch, AssetQualityScore, BurstSequence
-from .schemas import ImportBatchCreate, ImportBatchResponse, AnalysisStatus
+from .schemas import ImportBatchCreate, ImportBatchResponse, AnalysisStatus, QualityScoreResponse, BurstSequenceResponse
 from .quality.scorer import QualityScorer
 from .burst.detector import BurstDetector
 from .burst.scorer import BurstScorer
@@ -251,3 +251,25 @@ def get_batch_status(
         analyzed_assets=batch.analyzed_assets,
         skipped_assets=batch.skipped_assets
     )
+
+
+@app.get("/batches/{batch_id}/quality-scores", response_model=list[QualityScoreResponse])
+def get_quality_scores(
+    batch_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Retrieve quality scores for all assets in a batch"""
+    # Verify batch exists
+    batch = db.query(ImportBatch).filter(ImportBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Import batch {batch_id} not found"
+        )
+
+    # Query quality scores
+    scores = db.query(AssetQualityScore).filter(
+        AssetQualityScore.import_batch_id == batch_id
+    ).all()
+
+    return scores
