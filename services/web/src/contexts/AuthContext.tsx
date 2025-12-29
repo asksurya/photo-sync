@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface AuthContextType {
   isAuthenticated: boolean;
   logout: () => void;
-  login: () => void;
+  login: (token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -11,7 +11,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const login = () => {
+  const login = (_token: string) => {
+    // TODO: Validate token with API and store securely
     setIsAuthenticated(true);
   };
 
