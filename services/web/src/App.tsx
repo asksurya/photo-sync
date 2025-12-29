@@ -1,9 +1,13 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
 import { PhotoGridView } from './views/PhotoGridView';
 import { DuplicatesView } from './views/DuplicatesView';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Login } from './components/Login';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,47 +18,46 @@ const queryClient = new QueryClient({
   },
 });
 
-const App: React.FC = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <ErrorBoundary>
-          <div className="min-h-screen bg-gray-100">
-            {/* Header Navigation */}
-            <header className="bg-gray-800 text-white shadow-md">
-              <nav className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
-                  <Link to="/" className="text-2xl font-bold hover:text-gray-300 transition-colors">
-                    Photo Sync
-                  </Link>
-                  <div className="flex gap-6">
-                    <Link
-                      to="/"
-                      className="hover:text-gray-300 transition-colors font-medium"
-                    >
-                      Timeline
-                    </Link>
-                    <Link
-                      to="/duplicates"
-                      className="hover:text-gray-300 transition-colors font-medium"
-                    >
-                      Duplicates
-                    </Link>
-                  </div>
-                </div>
-              </nav>
-            </header>
+function AppContent() {
+  const { isAuthenticated, logout } = useAuth();
 
-            {/* Main Content */}
-            <main className="container mx-auto px-4 py-8">
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
+  return (
+    <Router>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-immich-bg flex">
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main content area */}
+          <div className="flex-1 ml-[220px] flex flex-col">
+            {/* Top bar */}
+            <TopBar onLogout={logout} />
+
+            {/* Page content */}
+            <main className="flex-1 p-8">
               <Routes>
                 <Route path="/" element={<PhotoGridView />} />
                 <Route path="/duplicates" element={<DuplicatesView />} />
               </Routes>
             </main>
           </div>
-        </ErrorBoundary>
-      </Router>
+        </div>
+      </ErrorBoundary>
+    </Router>
+  );
+}
+
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
