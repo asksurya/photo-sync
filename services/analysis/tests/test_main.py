@@ -192,3 +192,61 @@ def test_analyze_batch_with_corrupted_image(client, db_session):
     assert score is not None
     assert score.is_corrupted is True
     assert score.overall_quality == 0.0
+
+
+def test_get_batch_status_not_found(client):
+    """Test getting status for non-existent batch returns 404"""
+    batch_id = "00000000-0000-0000-0000-000000000000"
+    response = client.get(f"/batches/{batch_id}/status")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_batch_status_processing(client, db_session):
+    """Test getting status for a batch in processing state"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1", "asset-2", "asset-3", "asset-4", "asset-5"],
+        status="processing",
+        total_assets=5,
+        analyzed_assets=2,
+        skipped_assets=1
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    response = client.get(f"/batches/{batch_id}/status")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "processing"
+    assert data["total_assets"] == 5
+    assert data["analyzed_assets"] == 2
+    assert data["skipped_assets"] == 1
+    assert data["progress_percent"] == 40.0  # 2/5 * 100
+
+
+def test_get_batch_status_complete(client, db_session):
+    """Test getting status for a completed batch"""
+    batch = ImportBatch(
+        immich_user_id="user-123",
+        asset_ids=["asset-1", "asset-2"],
+        status="complete",
+        total_assets=2,
+        analyzed_assets=2,
+        skipped_assets=0
+    )
+    db_session.add(batch)
+    db_session.commit()
+    batch_id = batch.id
+
+    response = client.get(f"/batches/{batch_id}/status")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "complete"
+    assert data["total_assets"] == 2
+    assert data["analyzed_assets"] == 2
+    assert data["skipped_assets"] == 0
+    assert data["progress_percent"] == 100.0

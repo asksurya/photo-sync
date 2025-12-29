@@ -224,3 +224,30 @@ def analyze_batch(
         analyzed_assets=batch.analyzed_assets,
         skipped_assets=batch.skipped_assets
     )
+
+
+@app.get("/batches/{batch_id}/status", response_model=AnalysisStatus)
+def get_batch_status(
+    batch_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Get analysis progress for a batch"""
+    # Retrieve batch from database
+    batch = db.query(ImportBatch).filter(ImportBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Import batch {batch_id} not found"
+        )
+
+    # Calculate progress percentage
+    progress_percent = (batch.analyzed_assets / batch.total_assets * 100) if batch.total_assets > 0 else 0
+
+    return AnalysisStatus(
+        status=batch.status,
+        progress_percent=progress_percent,
+        eta_seconds=None,
+        total_assets=batch.total_assets,
+        analyzed_assets=batch.analyzed_assets,
+        skipped_assets=batch.skipped_assets
+    )
