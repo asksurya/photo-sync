@@ -7,3 +7,4 @@
 # Environment files
 .env.prod
 .env.local
+node_modules/
