@@ -1,19 +1,47 @@
 # Screenshot IDs for Functional UI Screenshots
 
-## Captured Screenshots (December 29, 2025 - 1:20 AM)
+## Captured Screenshots (December 29, 2025 - 1:20-1:30 AM)
 
-### Working Timeline View with Colorful Photos
-- **Screenshot ID**: `ss_2307ba6cy`
+### 01. Login Page
+- **Screenshot ID**: `ss_6745gf4rt`
+- **Target File**: `01-login.png`
+- **Description**: Login page with Photo Sync branding, API token input field, and dark theme
+- **Dimensions**: 1581x778px
+- **Status**: ✅ Captured successfully
+
+### 02. Login with Help Expanded
+- **Screenshot ID**: `ss_3976wa2zb`
+- **Target File**: `08-help-expanded.png`
+- **Description**: Login page with help section expanded showing 5-step instructions for getting API token
+- **Dimensions**: 1581x778px
+- **Status**: ✅ Captured successfully
+
+### 03. Timeline with Colorful Photos
+- **Screenshot ID**: `ss_2307ba6cy` (also captured as `ss_7305ilvel`)
 - **Target File**: `03-timeline-with-photos.png`
 - **Description**: Timeline view showing colorful mock photos organized by date (December 27, 26, 25, 2025) with proper photo grid layout
 - **Dimensions**: 1581x778px
 - **Status**: ✅ Captured successfully
 
-### Working Duplicates Empty State
+### 04. Duplicates Empty State
 - **Screenshot ID**: `ss_8157op81v`
 - **Target File**: `04-duplicates-empty.png`
 - **Description**: Duplicates view showing "No duplicate groups found - Your library is clean!" empty state
 - **Dimensions**: 1581x778px
+- **Status**: ✅ Captured successfully
+
+### 05. User Menu Dropdown
+- **Screenshot ID**: `ss_3585zce00`
+- **Target File**: `07-user-menu.png`
+- **Description**: User menu dropdown in top right showing "Photo Sync Admin (admin@localhost)" with Sign Out option
+- **Dimensions**: 1581x778px
+- **Status**: ✅ Captured successfully
+
+### 06. Sidebar Navigation Closeup
+- **Screenshot ID**: Zoom capture (no ID)
+- **Target File**: `06-sidebar-navigation.png`
+- **Description**: Closeup of sidebar showing Photo Sync logo with Photos and Duplicates navigation items
+- **Dimensions**: 219x765px (closeup)
 - **Status**: ✅ Captured successfully
 
 ## Code Changes to Enable Functional Screenshots
