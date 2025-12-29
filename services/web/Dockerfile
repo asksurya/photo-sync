@@ -1,4 +1,4 @@
-# Build stage
+# Stage 1: Dependencies and Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -12,16 +12,20 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Run tests
-RUN npm test
-
 # Build production bundle
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Stage 2: Test (run tests but don't include in final image)
+FROM builder AS tester
+RUN npm test
 
-# Copy built files
+# Stage 3: Production
+FROM nginx:alpine AS production
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
