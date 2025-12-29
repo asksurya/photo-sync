@@ -14,7 +14,7 @@ export function PhotoCard({ asset }: PhotoCardProps) {
   return (
     <div className="group relative aspect-square overflow-hidden rounded-[6px] bg-immich-card cursor-pointer transition-transform duration-150 hover:scale-102">
       <img
-        src={`/api/immich/assets/${asset.id}/thumbnail`}
+        src={asset.path || `/api/immich/assets/${asset.id}/thumbnail`}
         alt={asset.path?.split('/').pop() || 'Photo'}
         className="w-full h-full object-cover"
         loading="lazy"
