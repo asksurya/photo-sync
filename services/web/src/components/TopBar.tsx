@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MdSearch, MdLogout } from 'react-icons/md';
 
 interface TopBarProps {
