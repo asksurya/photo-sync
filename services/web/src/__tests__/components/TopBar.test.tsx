@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TopBar } from '../../components/TopBar';
 
 describe('TopBar', () => {
@@ -24,5 +24,35 @@ describe('TopBar', () => {
     fireEvent.click(signOutButton);
 
     expect(mockLogout).toHaveBeenCalled();
+  });
+
+  it('closes menu when clicking outside', async () => {
+    const { container } = render(<TopBar onLogout={() => {}} />);
+
+    const userButton = screen.getByRole('button', { name: /Photo Sync Admin/i });
+    fireEvent.click(userButton);
+
+    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+
+    fireEvent.mouseDown(container);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Sign Out')).not.toBeInTheDocument();
+    });
+  });
+
+  it('closes menu when pressing Escape', async () => {
+    render(<TopBar onLogout={() => {}} />);
+
+    const userButton = screen.getByRole('button', { name: /Photo Sync Admin/i });
+    fireEvent.click(userButton);
+
+    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Sign Out')).not.toBeInTheDocument();
+    });
   });
 });

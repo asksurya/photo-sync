@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MdSearch, MdLogout } from 'react-icons/md';
 
 interface TopBarProps {
@@ -7,6 +7,31 @@ interface TopBarProps {
 
 export function TopBar({ onLogout }: TopBarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showUserMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showUserMenu]);
 
   return (
     <header className="h-16 bg-immich-bg border-b border-immich-border flex items-center justify-between px-8">
@@ -24,12 +49,14 @@ export function TopBar({ onLogout }: TopBarProps) {
       </div>
 
       {/* User Menu */}
-      <div className="relative">
+      <div className="relative" ref={menuRef}>
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
           className="flex items-center gap-2 text-immich-text hover:bg-immich-card
                      rounded-full transition-colors"
           aria-label="Photo Sync Admin (admin@localhost)"
+          aria-expanded={showUserMenu}
+          aria-haspopup="true"
         >
           <div className="w-10 h-10 bg-immich-accent rounded-full flex items-center justify-center
                           text-white font-semibold text-sm">
