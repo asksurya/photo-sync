@@ -30,8 +30,8 @@ export function PhotoGridView() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-600">Loading photos...</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-immich-text-muted">Loading photos...</div>
       </div>
     );
   }
@@ -39,8 +39,8 @@ export function PhotoGridView() {
   // Error state
   if (isError) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-600">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-immich-error">
           Error loading photos: {error?.message || 'Unknown error'}
         </div>
       </div>
@@ -53,23 +53,30 @@ export function PhotoGridView() {
   // Empty state
   if (allAssets.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500">No photos to display</div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <div className="w-24 h-24 text-immich-text-muted mb-4">
+          {/* Empty state icon */}
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+          </svg>
+        </div>
+        <p className="text-immich-text-muted text-sm">No photos to display</p>
+        <p className="text-immich-text-muted text-xs mt-2">Upload photos to your Immich library to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div>
       <PhotoTimeline assets={allAssets} />
 
       {/* Infinite scroll sentinel */}
       {hasNextPage && (
         <div ref={ref} className="flex justify-center py-8">
           {isFetchingNextPage ? (
-            <div className="text-gray-600">Loading more photos...</div>
+            <div className="text-immich-text-muted">Loading more photos...</div>
           ) : (
-            <div className="text-gray-400">Scroll for more</div>
+            <div className="text-immich-text-muted text-sm">Scroll for more</div>
           )}
         </div>
       )}
