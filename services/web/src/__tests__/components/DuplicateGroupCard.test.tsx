@@ -127,7 +127,8 @@ describe('DuplicateGroupCard', () => {
     const { container } = render(<DuplicateGroupCard duplicates={mockDuplicates} />);
 
     const grid = container.querySelector('.grid');
-    expect(grid).toHaveClass('md:grid-cols-2');
+    expect(grid).toHaveClass('md:grid-cols-3');
+    expect(grid).toHaveClass('lg:grid-cols-4');
   });
 
   it('should show duplicate type', () => {

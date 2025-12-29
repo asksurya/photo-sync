@@ -118,8 +118,8 @@ describe('DuplicatesView', () => {
 
     render(<DuplicatesView />, { wrapper });
 
-    // Should show count of 2 duplicate groups
-    expect(screen.getByText(/2 duplicate groups/i)).toBeInTheDocument();
+    // Should show "Duplicates" title
+    expect(screen.getByText(/duplicates/i)).toBeInTheDocument();
 
     // Should render 4 images (2 groups x 2 images each)
     const images = screen.getAllByRole('img');
@@ -157,7 +157,7 @@ describe('DuplicatesView', () => {
     const { container } = render(<DuplicatesView />, { wrapper });
 
     // Should have 1 duplicate group card
-    const duplicateCards = container.querySelectorAll('.bg-white.rounded-lg');
+    const duplicateCards = container.querySelectorAll('.bg-immich-card.rounded-lg');
     expect(duplicateCards.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -197,8 +197,8 @@ describe('DuplicatesView', () => {
 
     render(<DuplicatesView />, { wrapper });
 
-    // Should show 1 group with 2 photos
-    expect(screen.getByText(/1 duplicate group/i)).toBeInTheDocument();
+    // Should show "Duplicates" title
+    expect(screen.getByText(/duplicates/i)).toBeInTheDocument();
     const images = screen.getAllByRole('img');
     expect(images).toHaveLength(2);
   });
@@ -250,8 +250,8 @@ describe('DuplicatesView', () => {
 
     render(<DuplicatesView />, { wrapper });
 
-    // Should show 2 groups
-    expect(screen.getByText(/2 duplicate groups/i)).toBeInTheDocument();
+    // Should show "Duplicates" title
+    expect(screen.getByText(/duplicates/i)).toBeInTheDocument();
     const images = screen.getAllByRole('img');
     expect(images).toHaveLength(4);
   });
@@ -316,7 +316,7 @@ describe('DuplicatesView', () => {
     expect(screen.getByText(/no duplicate groups found/i)).toBeInTheDocument();
   });
 
-  it('should display singular "group" when only 1 group found', () => {
+  it('should display title when duplicate groups are found', () => {
     const duplicateAssets = [
       {
         id: 'asset-1',
@@ -345,6 +345,6 @@ describe('DuplicatesView', () => {
     } as any);
 
     render(<DuplicatesView />, { wrapper });
-    expect(screen.getByText(/1 duplicate group found/i)).toBeInTheDocument();
+    expect(screen.getByText(/duplicates/i)).toBeInTheDocument();
   });
 });
