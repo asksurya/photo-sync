@@ -18,6 +18,7 @@ def db_session():
 def test_import_batch_creation(db_session):
     batch = ImportBatch(
         immich_user_id="test-user-123",
+        asset_ids=["asset-1", "asset-2"],
         total_assets=100,
         status="processing"
     )
@@ -32,7 +33,7 @@ def test_import_batch_creation(db_session):
 
 
 def test_asset_quality_score_creation(db_session):
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -53,7 +54,7 @@ def test_asset_quality_score_creation(db_session):
 
 
 def test_burst_sequence_creation(db_session):
-    batch = ImportBatch(immich_user_id="user", total_assets=5, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1", "asset-2", "asset-3", "asset-4", "asset-5"], total_assets=5, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -71,7 +72,7 @@ def test_burst_sequence_creation(db_session):
 
 
 def test_triage_action_creation(db_session):
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -91,7 +92,7 @@ def test_triage_action_creation(db_session):
 
 
 def test_cascade_delete_on_batch(db_session):
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="complete")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="complete")
     db_session.add(batch)
     db_session.commit()
 
@@ -129,7 +130,7 @@ def test_asset_quality_score_blur_score_out_of_range(db_session):
     """Test that blur_score outside 0-100 range is rejected."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -148,7 +149,7 @@ def test_asset_quality_score_negative_blur_score(db_session):
     """Test that negative blur_score is rejected."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -167,7 +168,7 @@ def test_asset_quality_score_exposure_score_out_of_range(db_session):
     """Test that exposure_score outside 0-100 range is rejected."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -186,7 +187,7 @@ def test_asset_quality_score_overall_quality_out_of_range(db_session):
     """Test that overall_quality outside 0-100 range is rejected."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -205,7 +206,7 @@ def test_triage_action_invalid_action_type(db_session):
     """Test that invalid action_type values are rejected."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -227,6 +228,7 @@ def test_guid_type_with_uuid_value(db_session):
     batch = ImportBatch(
         id=batch_id,
         immich_user_id="user",
+        asset_ids=["asset-1"],
         total_assets=1,
         status="processing"
     )
@@ -239,7 +241,7 @@ def test_guid_type_with_uuid_value(db_session):
 
 def test_string_array_type_with_multiple_values(db_session):
     """Test StringArray type adapter with multiple values."""
-    batch = ImportBatch(immich_user_id="user", total_assets=5, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1", "asset-2", "asset-3", "asset-4", "asset-5"], total_assets=5, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -260,7 +262,7 @@ def test_asset_quality_score_unique_per_batch(db_session):
     """Test that the same asset cannot have duplicate quality scores in the same batch."""
     from sqlalchemy.exc import IntegrityError
 
-    batch = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch = ImportBatch(immich_user_id="user", asset_ids=["asset-1"], total_assets=1, status="processing")
     db_session.add(batch)
     db_session.commit()
 
@@ -287,8 +289,8 @@ def test_asset_quality_score_unique_per_batch(db_session):
 
 def test_asset_quality_score_unique_across_batches(db_session):
     """Test that the same asset can have quality scores in different batches."""
-    batch1 = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
-    batch2 = ImportBatch(immich_user_id="user", total_assets=1, status="processing")
+    batch1 = ImportBatch(immich_user_id="user", asset_ids=["asset-123"], total_assets=1, status="processing")
+    batch2 = ImportBatch(immich_user_id="user", asset_ids=["asset-123"], total_assets=1, status="processing")
     db_session.add_all([batch1, batch2])
     db_session.commit()
 
