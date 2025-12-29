@@ -13,13 +13,16 @@ This directory contains screenshots for documentation and user guides showing th
 
 ### Captured (December 29, 2025)
 
+✅ **02-timeline-empty.png** - Initial/empty application state (1622x757)
 ✅ **03-timeline-with-photos.png** - Timeline with photo grid (1622x757)
 ✅ **04-duplicates-empty.png** - Duplicates empty state (1622x757)
+✅ **06-sidebar-navigation.png** - Sidebar navigation closeup (300x700)
+✅ **08-help-expanded.png** - Login with help section expanded (1622x757)
 
 ### Needed for Documentation
 
-⏳ **02-timeline-empty.png** - Empty timeline after login
 ⏳ **05-duplicates-with-groups.png** - Duplicates with sample data
+⏳ **07-user-menu.png** - User menu dropdown
 
 ## How to Capture
 

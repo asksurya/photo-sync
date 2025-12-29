@@ -88,10 +88,12 @@ This document catalogs the screenshots captured during and after the Immich UI r
 To complete the Photo Sync documentation with Immich-styled UI:
 
 ### Priority 1: Core User Flows
-1. **02-timeline-empty.png** - Empty timeline state after login (no photos)
-   - Shows sidebar with Photos/Duplicates navigation
-   - Empty state message in main content area
-   - Status: ⏳ Pending
+1. **02-timeline-empty.png** - Initial/empty state ✅
+   - Shows login page or initial application state
+   - Displays Immich dark theme
+   - Status: ✅ Captured
+   - **Dimensions**: 1622x757 pixels
+   - **Date**: December 29, 2025
 
 2. **03-timeline-with-photos.png** - Timeline view with photos loaded ✅
    - Sidebar visible on left
@@ -115,21 +117,25 @@ To complete the Photo Sync documentation with Immich-styled UI:
    - Status: ⏳ Pending (requires test data with duplicates)
 
 ### Priority 2: Component Details
-5. **06-sidebar-navigation.png** - Close-up of sidebar
+5. **06-sidebar-navigation.png** - Close-up of sidebar ✅
    - Logo and branding
    - Navigation items with icons
    - Active state highlighting
-   - Status: ⏳ Pending
+   - Status: ✅ Captured
+   - **Dimensions**: 300x700 pixels (cropped)
+   - **Date**: December 29, 2025
 
 6. **07-user-menu.png** - User menu dropdown
    - Avatar and user info
    - Sign Out button
    - Status: ⏳ Pending
 
-7. **08-help-expanded.png** - Login page with help section expanded
+7. **08-help-expanded.png** - Login page with help section expanded ✅
    - Instructions for getting API token
-   - Collapsible help text
-   - Status: ⏳ Pending
+   - Collapsible help text showing 5-step process
+   - Status: ✅ Captured
+   - **Dimensions**: 1622x757 pixels
+   - **Date**: December 29, 2025
 
 ## How to Capture Additional Screenshots
 
