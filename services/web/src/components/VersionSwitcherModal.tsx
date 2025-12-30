@@ -92,6 +92,15 @@ export function VersionSwitcherModal({ asset, open, onOpenChange, onDelete }: Ve
   const isCurrentMarkedForDeletion = markedForDeletion.has(currentIndex);
   const deletionCount = markedForDeletion.size;
 
+  // Determine which endpoint to use based on file extension
+  // For web-compatible formats (JPG, PNG, WEBP, GIF), use original for full resolution
+  // For RAW formats (CR2, NEF, ARW, DNG, etc.), use preview size (1440p converted JPEG)
+  // Note: Immich does not provide full-resolution converted images for RAW files
+  const currentExtension = allExtensions[currentIndex];
+  const webCompatibleFormats = ['JPG', 'JPEG', 'PNG', 'WEBP', 'GIF', 'BMP'];
+  const useOriginal = webCompatibleFormats.includes(currentExtension);
+  const imageEndpoint = useOriginal ? 'original' : 'thumbnail?size=preview';
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -174,7 +183,7 @@ export function VersionSwitcherModal({ asset, open, onOpenChange, onDelete }: Ve
             {/* Full size image */}
             <div className="relative max-w-full max-h-full flex items-center justify-center">
               <img
-                src={`/api/immich/assets/${currentVersionId}/original`}
+                src={`/api/immich/assets/${currentVersionId}/${imageEndpoint}`}
                 alt={`${allExtensions[currentIndex]} version`}
                 className="max-w-full max-h-[calc(100vh-300px)] object-contain rounded-lg shadow-2xl"
               />
