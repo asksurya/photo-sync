@@ -79,6 +79,8 @@ nano .env.prod  # Configure your settings
 ./scripts/backup.sh
 
 # See docs/RESTORE.md for restore procedures
+
+docker-compose stop immich-server && docker-compose rm -f immich-server && docker-compose up -d immich-server
 ```
 
 ## Architecture
