@@ -1,11 +1,19 @@
 // services/web/src/components/PhotoTimeline.tsx
 import React, { useState } from 'react';
-import { EnrichedAsset } from '../lib/apiClient';
+import { ApiClient, EnrichedAsset } from '../lib/apiClient';
 import { PhotoCard } from './PhotoCard';
 import { VersionSwitcherModal } from './VersionSwitcherModal';
 
 export interface PhotoTimelineProps {
   assets: EnrichedAsset[];
+}
+
+function getApiClient() {
+  const token = localStorage.getItem('immich_token') || 'mock-token';
+  return new ApiClient(
+    import.meta.env.VITE_GATEWAY_URL || 'http://localhost:3000',
+    token
+  );
 }
 
 export function PhotoTimeline({ assets }: PhotoTimelineProps) {
@@ -15,6 +23,11 @@ export function PhotoTimeline({ assets }: PhotoTimelineProps) {
   const handlePhotoClick = (asset: EnrichedAsset) => {
     setSelectedAsset(asset);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = async (assetIds: string[]) => {
+    const apiClient = getApiClient();
+    await apiClient.deleteAssets(assetIds);
   };
 
   const { groupedAssets, sortedDates } = React.useMemo(() => {
@@ -73,6 +86,7 @@ export function PhotoTimeline({ assets }: PhotoTimelineProps) {
           asset={selectedAsset}
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
+          onDelete={handleDelete}
         />
       )}
     </>

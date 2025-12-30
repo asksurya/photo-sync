@@ -179,4 +179,64 @@ export class ImmichClient {
       throw new Error(`Asset fetch failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+
+  async deleteAssets(token: string, assetIds: string[]): Promise<void> {
+    // Input validation
+    if (!token || token.trim().length === 0) {
+      throw new Error('Token cannot be empty');
+    }
+    if (!Array.isArray(assetIds) || assetIds.length === 0) {
+      throw new Error('Asset IDs must be a non-empty array');
+    }
+
+    try {
+      // Immich DELETE /api/assets endpoint accepts bulk deletion
+      await this.client.delete('/api/assets', {
+        headers: {
+          'x-api-key': token,
+          'Content-Type': 'application/json',
+        },
+        data: {
+          ids: assetIds,
+        },
+        timeout: GET_ASSETS_TIMEOUT_MS,
+      });
+
+      this.logger.info('Assets deleted successfully', { count: assetIds.length, ids: assetIds });
+    } catch (error) {
+      // Use type guard instead of unsafe type casting
+      if (error instanceof AxiosError) {
+        // Handle different HTTP status codes
+        if (error.response?.status === 401) {
+          this.logger.error('Invalid token provided for asset deletion');
+          throw new Error('Asset deletion failed: Invalid token');
+        }
+        if (error.response?.status === 403) {
+          this.logger.error('Forbidden');
+          throw new Error('Asset deletion failed: Forbidden');
+        }
+        if (error.response?.status === 404) {
+          this.logger.error('Asset not found');
+          throw new Error('Asset deletion failed: Asset not found');
+        }
+        if (error.response?.status === 500) {
+          this.logger.error('Server error');
+          throw new Error('Asset deletion failed: Server error');
+        }
+        if (error.response?.status === 503) {
+          this.logger.error('Service unavailable');
+          throw new Error('Asset deletion failed: Service unavailable');
+        }
+        // Handle timeout
+        if (error.code === 'ECONNABORTED') {
+          this.logger.error('Request timeout');
+          throw new Error('Asset deletion failed: Request timeout');
+        }
+      }
+
+      // Wrap all other errors with context
+      this.logger.error('Network error during asset deletion', { error });
+      throw new Error(`Asset deletion failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }

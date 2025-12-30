@@ -85,6 +85,49 @@ export class ApiClient {
     }
   }
 
+  async deleteAssets(assetIds: string[]): Promise<{ success: boolean; deletedCount: number }> {
+    // Input validation
+    if (!Array.isArray(assetIds) || assetIds.length === 0) {
+      throw new Error('assetIds must be a non-empty array');
+    }
+
+    try {
+      const response = await this.client.delete('/api/assets', {
+        headers: { Authorization: `Bearer ${this.token}` },
+        data: { assetIds }
+      });
+      return response.data;
+    } catch (error) {
+      // Handle axios errors with meaningful messages
+      if (this.isAxiosError(error)) {
+        // Handle timeout errors
+        if (error.code === 'ECONNABORTED') {
+          throw new Error('Request timeout: Gateway did not respond in time');
+        }
+
+        // Handle HTTP status code errors
+        if (error.response) {
+          const status = error.response.status;
+          switch (status) {
+            case 401:
+              throw new Error('Unauthorized: Invalid or expired token');
+            case 403:
+              throw new Error('Forbidden: Access denied');
+            case 404:
+              throw new Error('Not Found: Assets not found');
+            case 500:
+              throw new Error('Internal Server Error: Please try again later');
+            case 503:
+              throw new Error('Service Unavailable: Please try again later');
+          }
+        }
+      }
+
+      // Re-throw original error if not handled
+      throw error;
+    }
+  }
+
   private isAxiosError(error: unknown): error is AxiosError {
     return (error as AxiosError).isAxiosError === true;
   }

@@ -122,5 +122,76 @@ export function createAssetsRouter(
     }
   });
 
+  router.delete('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Extract and validate Authorization header
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || authHeader.trim().length === 0) {
+        logger.warn('Missing Authorization header');
+        return res.status(401).json({
+          error: 'unauthorized',
+          message: 'Missing Authorization header',
+        });
+      }
+
+      // Validate Bearer token format
+      const parts = authHeader.trim().split(/\s+/);
+      if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
+        logger.warn('Invalid Authorization header format');
+        return res.status(401).json({
+          error: 'unauthorized',
+          message: 'Invalid Authorization header format',
+        });
+      }
+
+      const token = parts[1].trim();
+      if (token.length === 0) {
+        logger.warn('Empty token in Authorization header');
+        return res.status(401).json({
+          error: 'unauthorized',
+          message: 'Invalid Authorization header format',
+        });
+      }
+
+      // Validate request body
+      const { assetIds } = req.body;
+
+      if (!Array.isArray(assetIds) || assetIds.length === 0) {
+        logger.warn('Invalid assetIds parameter');
+        return res.status(400).json({
+          error: 'invalid_parameters',
+          message: 'assetIds must be a non-empty array',
+        });
+      }
+
+      // Validate all IDs are strings
+      if (!assetIds.every((id: any) => typeof id === 'string' && id.length > 0)) {
+        logger.warn('Invalid asset ID in array');
+        return res.status(400).json({
+          error: 'invalid_parameters',
+          message: 'All asset IDs must be non-empty strings',
+        });
+      }
+
+      logger.info('Deleting assets', { count: assetIds.length, ids: assetIds });
+
+      // Delete assets from Immich
+      await immichClient.deleteAssets(token, assetIds);
+
+      logger.info('Assets deleted successfully', { count: assetIds.length });
+
+      // Return success response
+      res.json({
+        success: true,
+        deletedCount: assetIds.length
+      });
+    } catch (error) {
+      // Pass all errors to the error handler
+      logger.error('Error in delete assets route', { error });
+      next(error);
+    }
+  });
+
   return router;
 }
