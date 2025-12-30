@@ -4,6 +4,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 export interface Asset {
   id: string;
   path?: string;
+  originalPath?: string;
   type: string;
   size?: number;
   [key: string]: any;
@@ -15,6 +16,7 @@ export interface EnrichedAsset extends Asset {
   groupType?: string;
   isPrimaryVersion?: boolean;
   alternateVersions?: string[];
+  alternateVersionExtensions?: string[];
   duplicateGroupId?: string;
   duplicateType?: string;
   similarityScore?: number;

@@ -16,6 +16,7 @@ export interface EnrichedAsset extends Asset {
   groupType?: string;
   isPrimaryVersion?: boolean;
   alternateVersions?: string[];
+  alternateVersionExtensions?: string[];
   duplicateGroupId?: string;
   duplicateType?: string;
   similarityScore?: number;
@@ -101,8 +102,10 @@ export class EnrichmentService {
     const paths: string[] = [];
 
     for (const asset of assets) {
-      if (asset.path && typeof asset.path === 'string' && asset.path.trim().length > 0) {
-        paths.push(asset.path);
+      // Check both 'path' and 'originalPath' fields (Immich uses 'originalPath')
+      const filePath = asset.path || asset.originalPath;
+      if (filePath && typeof filePath === 'string' && filePath.trim().length > 0) {
+        paths.push(filePath);
       }
     }
 
@@ -152,26 +155,49 @@ export class EnrichmentService {
     groupMap: Map<string, GroupInfo>,
     duplicateMap: Map<string, DuplicateInfo>
   ): EnrichedAsset[] {
+    // Build a reverse map: file path -> asset ID for looking up alternate version IDs
+    const pathToIdMap = new Map<string, string>();
+    for (const asset of assets) {
+      const filePath = asset.path || asset.originalPath;
+      if (filePath) {
+        pathToIdMap.set(filePath, asset.id);
+      }
+    }
+
     return assets.map((asset: Asset) => {
       // Don't mutate input - create new enriched object
       const enriched: EnrichedAsset = { ...asset };
 
+      // Get the file path (check both 'path' and 'originalPath' fields)
+      const filePath = asset.path || asset.originalPath;
+
       // Skip enrichment if asset has no path
-      if (!asset.path) {
+      if (!filePath) {
         return enriched;
       }
 
       // Add group data if available
-      const groupInfo = groupMap.get(asset.path);
+      const groupInfo = groupMap.get(filePath);
       if (groupInfo) {
         enriched.groupId = groupInfo.groupId;
         enriched.groupType = groupInfo.groupType;
         enriched.isPrimaryVersion = groupInfo.isPrimary;
-        enriched.alternateVersions = groupInfo.alternateVersions;
+
+        // Convert alternate version file paths to asset IDs
+        enriched.alternateVersions = groupInfo.alternateVersions
+          .map(path => pathToIdMap.get(path))
+          .filter((id): id is string => id !== undefined);
+
+        // Extract file extensions from alternate version paths
+        enriched.alternateVersionExtensions = groupInfo.alternateVersions
+          .map(path => {
+            const parts = path.split('.');
+            return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
+          });
       }
 
       // Add duplicate data if available
-      const duplicateInfo = duplicateMap.get(asset.path);
+      const duplicateInfo = duplicateMap.get(filePath);
       if (duplicateInfo) {
         enriched.duplicateGroupId = duplicateInfo.duplicateGroupId;
         enriched.duplicateType = duplicateInfo.duplicateType;
