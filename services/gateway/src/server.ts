@@ -52,11 +52,11 @@ app.use('/health', createHealthRouter(
 // 5. Protected routes with authentication
 const authMiddleware = createAuthMiddleware(immichClient, redisCache);
 
-// Assets route with enrichment
-app.use('/api/assets', authMiddleware, createAssetsRouter(immichClient, enrichmentService));
+// Assets route with enrichment (handles its own token extraction)
+app.use('/api/assets', createAssetsRouter(immichClient, enrichmentService));
 
-// Proxy routes for direct service access
-app.use('/api', authMiddleware, createProxyRouter({
+// Proxy routes for direct service access (pass through to services)
+app.use('/api', createProxyRouter({
   immichUrl: config.immichApiUrl,
   groupingUrl: config.groupingApiUrl,
   deduplicationUrl: config.dedupApiUrl,

@@ -128,19 +128,21 @@ export class ImmichClient {
     }
 
     try {
-      const response = await this.client.get<Asset[]>('/api/assets', {
+      // Immich uses POST /api/search/metadata for listing assets with pagination
+      const response = await this.client.post<{ assets: { items: Asset[] } }>('/api/search/metadata', {
+        page: Math.floor(skip / limit) + 1,
+        size: limit,
+      }, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          skip,
-          limit,
+          'x-api-key': token,
+          'Content-Type': 'application/json',
         },
         timeout: GET_ASSETS_TIMEOUT_MS,
       });
 
-      this.logger.debug('Assets fetched successfully', { count: response.data.length });
-      return response.data;
+      const assets = response.data.assets?.items || [];
+      this.logger.debug('Assets fetched successfully', { count: assets.length });
+      return assets;
     } catch (error) {
       // Use type guard instead of unsafe type casting
       if (error instanceof AxiosError) {
