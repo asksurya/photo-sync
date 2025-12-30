@@ -10,6 +10,10 @@ export interface TokenValidation {
   email: string;
 }
 
+export interface PingResponse {
+  res: string;
+}
+
 export interface Asset {
   id: string;
   type: string;
@@ -31,6 +35,27 @@ export class ImmichClient {
       ),
       transports: [new transports.Console()],
     });
+  }
+
+  async ping(): Promise<PingResponse> {
+    try {
+      const response = await this.client.get<PingResponse>('/api/server/ping', {
+        timeout: VALIDATE_TOKEN_TIMEOUT_MS,
+      });
+
+      this.logger.debug('Ping successful');
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.code === 'ECONNABORTED') {
+          this.logger.error('Ping timeout');
+          throw new Error('Ping failed: Request timeout');
+        }
+      }
+
+      this.logger.error('Ping failed', { error });
+      throw new Error(`Ping failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async validateToken(token: string): Promise<TokenValidation> {

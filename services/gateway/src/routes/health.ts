@@ -6,7 +6,6 @@ import { DeduplicationClient } from '../clients/deduplication';
 import { RedisCache } from '../services/redis';
 import { createLogger, format, transports, Logger } from 'winston';
 
-const HEALTH_CHECK_TOKEN = 'health-check-token';
 const HEALTH_CHECK_PATH = 'health-check';
 const HEALTH_CHECK_TIMEOUT_MS = 5000;
 
@@ -126,7 +125,7 @@ async function checkImmichHealth(client: ImmichClient): Promise<ServiceStatus> {
   const startTime = Date.now();
 
   try {
-    await client.validateToken(HEALTH_CHECK_TOKEN);
+    await client.ping();
     const latency = Date.now() - startTime;
 
     return {
@@ -181,7 +180,9 @@ async function checkDeduplicationHealth(client: DeduplicationClient): Promise<Se
 
 async function checkRedisHealth(cache: RedisCache): Promise<ServiceStatus> {
   try {
-    await cache.getTokenValidation(HEALTH_CHECK_TOKEN);
+    // Just check if Redis is responsive by attempting a cache read
+    // The key doesn't need to exist - we're testing connectivity
+    await cache.getTokenValidation('health-check');
 
     return {
       status: 'up',

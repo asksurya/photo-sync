@@ -35,6 +35,7 @@ describe('createHealthRouter', () => {
   beforeEach(() => {
     // Create mock clients
     mockImmichClient = {
+      ping: jest.fn(),
       validateToken: jest.fn(),
       getAssets: jest.fn(),
     } as any;
@@ -72,10 +73,9 @@ describe('createHealthRouter', () => {
   describe('GET /', () => {
     describe('Success Cases', () => {
       it('should return 200 with all services healthy', async () => {
-        // Mock successful validation for Immich
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        // Mock successful ping for Immich
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
 
         // Mock successful calls for grouping and deduplication
@@ -114,9 +114,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should measure latency for each service', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -139,7 +138,7 @@ describe('createHealthRouter', () => {
 
     describe('Service Failure Cases', () => {
       it('should return 503 when status is degraded', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(
+        mockImmichClient.ping.mockRejectedValueOnce(
           new Error('Connection refused')
         );
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
@@ -159,7 +158,7 @@ describe('createHealthRouter', () => {
       });
 
       it('should mark Immich as down when health check fails', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(
+        mockImmichClient.ping.mockRejectedValueOnce(
           new Error('Connection refused')
         );
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
@@ -179,9 +178,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should mark grouping service as down when health check fails', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockRejectedValueOnce(
           new Error('Service unavailable')
@@ -202,9 +200,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should mark deduplication service as down when health check fails', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockRejectedValueOnce(
@@ -225,9 +222,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should mark Redis as down when health check fails', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -248,7 +244,7 @@ describe('createHealthRouter', () => {
       });
 
       it('should mark all services as down when all health checks fail', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(new Error('Immich down'));
+        mockImmichClient.ping.mockRejectedValueOnce(new Error('Immich down'));
         mockGroupingClient.getGroupsByPaths.mockRejectedValueOnce(new Error('Grouping down'));
         mockDeduplicationClient.getDuplicatesByPaths.mockRejectedValueOnce(
           new Error('Deduplication down')
@@ -273,7 +269,7 @@ describe('createHealthRouter', () => {
       });
 
       it('should handle multiple service failures', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(new Error('Immich error'));
+        mockImmichClient.ping.mockRejectedValueOnce(new Error('Immich error'));
         mockGroupingClient.getGroupsByPaths.mockRejectedValueOnce(new Error('Grouping error'));
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
         mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
@@ -292,8 +288,8 @@ describe('createHealthRouter', () => {
 
     describe('Edge Cases', () => {
       it('should handle timeout errors gracefully', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(
-          new Error('Token validation failed: Request timeout')
+        mockImmichClient.ping.mockRejectedValueOnce(
+          new Error('Ping failed: Request timeout')
         );
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -309,7 +305,7 @@ describe('createHealthRouter', () => {
       });
 
       it('should handle non-Error exceptions from Immich', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce('string error');
+        mockImmichClient.ping.mockRejectedValueOnce('string error');
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
         mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
@@ -324,9 +320,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should handle non-Error exceptions from grouping', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockRejectedValueOnce('string error');
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -342,9 +337,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should handle non-Error exceptions from deduplication', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockRejectedValueOnce(12345);
@@ -360,9 +354,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should handle non-Error exceptions from Redis', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -379,9 +372,9 @@ describe('createHealthRouter', () => {
 
       it('should complete health checks even if some are slow', async () => {
         // Simulate a slow Immich response
-        mockImmichClient.validateToken.mockImplementation(
+        mockImmichClient.ping.mockImplementation(
           () => new Promise((resolve) =>
-            setTimeout(() => resolve({ userId: 'health-check', email: 'health@check.com' }), 100)
+            setTimeout(() => resolve({ res: 'pong' }), 100)
           )
         );
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
@@ -399,7 +392,7 @@ describe('createHealthRouter', () => {
 
       it('should timeout health checks after 5 seconds', async () => {
         // Simulate a very slow service that never resolves
-        mockImmichClient.validateToken.mockImplementation(
+        mockImmichClient.ping.mockImplementation(
           () => new Promise(() => {}) // Never resolves
         );
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
@@ -424,9 +417,8 @@ describe('createHealthRouter', () => {
 
     describe('Response Structure', () => {
       it('should return correct response structure', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -461,7 +453,7 @@ describe('createHealthRouter', () => {
 
       it('should include error messages when services are down', async () => {
         const immichError = new Error('Immich connection failed');
-        mockImmichClient.validateToken.mockRejectedValueOnce(immichError);
+        mockImmichClient.ping.mockRejectedValueOnce(immichError);
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
         mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
@@ -477,7 +469,7 @@ describe('createHealthRouter', () => {
       });
 
       it('should not include latency when service is down', async () => {
-        mockImmichClient.validateToken.mockRejectedValueOnce(new Error('Down'));
+        mockImmichClient.ping.mockRejectedValueOnce(new Error('Down'));
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
         mockRedisCache.getTokenValidation.mockResolvedValueOnce(null);
@@ -492,10 +484,9 @@ describe('createHealthRouter', () => {
     });
 
     describe('Health Check Logic', () => {
-      it('should use a health check token for Immich validation', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+      it('should ping Immich server for health check', async () => {
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -505,14 +496,13 @@ describe('createHealthRouter', () => {
           .get('/health')
           .expect(200);
 
-        // Verify that validateToken was called with a health check token
-        expect(mockImmichClient.validateToken).toHaveBeenCalledWith('health-check-token');
+        // Verify that ping was called
+        expect(mockImmichClient.ping).toHaveBeenCalled();
       });
 
       it('should use health check paths for grouping service', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -527,9 +517,8 @@ describe('createHealthRouter', () => {
       });
 
       it('should use health check paths for deduplication service', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -543,10 +532,9 @@ describe('createHealthRouter', () => {
         expect(mockDeduplicationClient.getDuplicatesByPaths).toHaveBeenCalledWith(['health-check']);
       });
 
-      it('should use health check token for Redis validation', async () => {
-        mockImmichClient.validateToken.mockResolvedValueOnce({
-          userId: 'health-check',
-          email: 'health@check.com',
+      it('should use health check key for Redis validation', async () => {
+        mockImmichClient.ping.mockResolvedValueOnce({
+          res: 'pong',
         });
         mockGroupingClient.getGroupsByPaths.mockResolvedValueOnce([]);
         mockDeduplicationClient.getDuplicatesByPaths.mockResolvedValueOnce([]);
@@ -556,8 +544,8 @@ describe('createHealthRouter', () => {
           .get('/health')
           .expect(200);
 
-        // Verify that getTokenValidation was called with a health check token
-        expect(mockRedisCache.getTokenValidation).toHaveBeenCalledWith('health-check-token');
+        // Verify that getTokenValidation was called with a health check key
+        expect(mockRedisCache.getTokenValidation).toHaveBeenCalledWith('health-check');
       });
     });
   });

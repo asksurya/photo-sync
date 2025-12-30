@@ -51,6 +51,41 @@ describe('ImmichClient', () => {
     });
   });
 
+  describe('ping', () => {
+    it('should ping successfully', async () => {
+      const mockResponse = {
+        data: { res: 'pong' },
+      };
+      mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
+
+      const result = await client.ping();
+
+      expect(result).toEqual({ res: 'pong' });
+      expect(mockAxiosInstance.get).toHaveBeenCalledWith(
+        '/api/server/ping',
+        {
+          timeout: 5000,
+        }
+      );
+    });
+
+    it('should throw error on timeout', async () => {
+      const axiosError = new AxiosError('Timeout');
+      axiosError.code = 'ECONNABORTED';
+
+      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+
+      await expect(client.ping()).rejects.toThrow('Ping failed: Request timeout');
+    });
+
+    it('should throw error on network failure', async () => {
+      const error = new Error('Network Error');
+      mockAxiosInstance.get.mockRejectedValueOnce(error);
+
+      await expect(client.ping()).rejects.toThrow('Ping failed: Network Error');
+    });
+  });
+
   describe('validateToken', () => {
     it('should validate token successfully', async () => {
       const mockResponse = {
