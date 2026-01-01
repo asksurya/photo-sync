@@ -22,7 +22,7 @@ describe('PhotoCard', () => {
     // Verify container has Immich dark theme styling
     const cardContainer = container.firstChild as HTMLElement;
     expect(cardContainer).toHaveClass('aspect-square');
-    expect(cardContainer).toHaveClass('rounded-[6px]');
+    expect(cardContainer).toHaveClass('rounded-xl');
     expect(cardContainer).toHaveClass('bg-immich-card');
     expect(cardContainer).toHaveClass('group');
     expect(cardContainer).toHaveClass('cursor-pointer');
@@ -97,7 +97,7 @@ describe('PhotoCard', () => {
     const { container } = render(<PhotoCard asset={asset} />);
 
     const cardContainer = container.firstChild as HTMLElement;
-    expect(cardContainer).toHaveClass('transition-transform');
-    expect(cardContainer).toHaveClass('duration-150');
+    expect(cardContainer).toHaveClass('transition-all');
+    expect(cardContainer).toHaveClass('duration-300');
   });
 });

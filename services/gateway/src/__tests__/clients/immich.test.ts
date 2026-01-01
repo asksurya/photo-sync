@@ -189,16 +189,18 @@ describe('ImmichClient', () => {
         { id: 'asset-2', type: 'VIDEO' },
       ];
       const mockResponse = {
-        data: mockAssets,
+        data: { assets: { items: mockAssets } },
       };
-      mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       const result = await client.getAssets('valid-token', 0, 100);
 
       expect(result).toEqual(mockAssets);
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/assets', {
-        headers: { Authorization: 'Bearer valid-token' },
-        params: { skip: 0, limit: 100 },
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/search/metadata', {
+        page: 1,
+        size: 100,
+      }, {
+        headers: { 'x-api-key': 'valid-token', 'Content-Type': 'application/json' },
         timeout: 30000,
       });
     });
@@ -207,7 +209,7 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Unauthorized');
       axiosError.response = { status: 401 } as any;
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('invalid-token', 0, 100)).rejects.toThrow('Asset fetch failed: Invalid token');
     });
@@ -216,7 +218,7 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Forbidden');
       axiosError.response = { status: 403 } as any;
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Forbidden');
     });
@@ -225,7 +227,7 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Not Found');
       axiosError.response = { status: 404 } as any;
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Endpoint not found');
     });
@@ -234,7 +236,7 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Server Error');
       axiosError.response = { status: 500 } as any;
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Server error');
     });
@@ -243,7 +245,7 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Service Unavailable');
       axiosError.response = { status: 503 } as any;
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Service unavailable');
     });
@@ -252,20 +254,20 @@ describe('ImmichClient', () => {
       const axiosError = new AxiosError('Timeout');
       axiosError.code = 'ECONNABORTED';
 
-      mockAxiosInstance.get.mockRejectedValueOnce(axiosError);
+      mockAxiosInstance.post.mockRejectedValueOnce(axiosError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Request timeout');
     });
 
     it('should throw error for network error', async () => {
       const networkError = new Error('Network Error');
-      mockAxiosInstance.get.mockRejectedValueOnce(networkError);
+      mockAxiosInstance.post.mockRejectedValueOnce(networkError);
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: Network Error');
     });
 
     it('should throw error for non-Error object', async () => {
-      mockAxiosInstance.get.mockRejectedValueOnce('string error');
+      mockAxiosInstance.post.mockRejectedValueOnce('string error');
 
       await expect(client.getAssets('token', 0, 100)).rejects.toThrow('Asset fetch failed: string error');
     });
@@ -288,14 +290,16 @@ describe('ImmichClient', () => {
 
     it('should handle skip of 0 correctly', async () => {
       const mockAssets = [{ id: 'asset-1', type: 'IMAGE' }];
-      mockAxiosInstance.get.mockResolvedValueOnce({ data: mockAssets });
+      mockAxiosInstance.post.mockResolvedValueOnce({ data: { assets: { items: mockAssets } } });
 
       const result = await client.getAssets('token', 0, 10);
 
       expect(result).toEqual(mockAssets);
-      expect(mockAxiosInstance.get).toHaveBeenCalledWith('/api/assets', {
-        headers: { Authorization: 'Bearer token' },
-        params: { skip: 0, limit: 10 },
+      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/api/search/metadata', {
+        page: 1,
+        size: 10,
+      }, {
+        headers: { 'x-api-key': 'token', 'Content-Type': 'application/json' },
         timeout: 30000,
       });
     });

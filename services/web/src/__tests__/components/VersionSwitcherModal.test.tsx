@@ -53,9 +53,9 @@ describe('VersionSwitcherModal', () => {
       />
     );
 
-    // Main asset + 2 alternates = 3 images
+    // Main viewer image + thumbnail strip (main + 2 alternates) = 4 images
     const images = screen.getAllByRole('img');
-    expect(images).toHaveLength(3);
+    expect(images).toHaveLength(4);
   });
 
   it('should display main version with primary badge', () => {
@@ -99,7 +99,8 @@ describe('VersionSwitcherModal', () => {
       />
     );
 
-    expect(screen.getByText(/3 versions/i)).toBeInTheDocument();
+    // Component shows "1 of 3 • JPG" format
+    expect(screen.getByText(/1 of 3/i)).toBeInTheDocument();
   });
 
   it('should render with asset that has no alternateVersions', () => {
@@ -121,7 +122,8 @@ describe('VersionSwitcherModal', () => {
     );
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/1 version/i)).toBeInTheDocument();
+    // Component shows "1 of 1 • JPG" format
+    expect(screen.getByText(/1 of 1/i)).toBeInTheDocument();
   });
 
   it('should render thumbnails with correct src URLs', () => {
@@ -135,12 +137,15 @@ describe('VersionSwitcherModal', () => {
     );
 
     const images = screen.getAllByRole('img');
-    expect(images[0]).toHaveAttribute('src', '/api/immich/assets/asset-1/thumbnail');
-    expect(images[1]).toHaveAttribute('src', '/api/immich/assets/asset-2/thumbnail');
-    expect(images[2]).toHaveAttribute('src', '/api/immich/assets/asset-3/thumbnail');
+    // images[0] is the main viewer (uses /original for JPG format)
+    expect(images[0]).toHaveAttribute('src', '/api/immich/assets/asset-1/original');
+    // images[1-3] are the thumbnail strip
+    expect(images[1]).toHaveAttribute('src', '/api/immich/assets/asset-1/thumbnail');
+    expect(images[2]).toHaveAttribute('src', '/api/immich/assets/asset-2/thumbnail');
+    expect(images[3]).toHaveAttribute('src', '/api/immich/assets/asset-3/thumbnail');
   });
 
-  it('should have responsive grid layout classes', () => {
+  it('should have flex layout for thumbnail strip', () => {
     const onOpenChange = vi.fn();
     render(
       <VersionSwitcherModal
@@ -150,9 +155,8 @@ describe('VersionSwitcherModal', () => {
       />
     );
 
-    // Radix Portal renders outside container, so we need to search in document
-    const grid = document.querySelector('.grid');
-    expect(grid).not.toBeNull();
-    expect(grid).toHaveClass('grid-cols-2', 'md:grid-cols-3');
+    // Component uses flex layout for thumbnail strip, not grid
+    const flexContainer = document.querySelector('.flex.items-center.gap-2');
+    expect(flexContainer).not.toBeNull();
   });
 });
