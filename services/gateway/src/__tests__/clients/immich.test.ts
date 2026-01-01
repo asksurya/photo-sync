@@ -33,6 +33,7 @@ describe('ImmichClient', () => {
     mockAxiosInstance = {
       post: jest.fn(),
       get: jest.fn(),
+      delete: jest.fn(),
     };
 
     mockedAxios.create = jest.fn().mockReturnValue(mockAxiosInstance);
@@ -300,6 +301,128 @@ describe('ImmichClient', () => {
         size: 10,
       }, {
         headers: { 'x-api-key': 'token', 'Content-Type': 'application/json' },
+        timeout: 30000,
+      });
+    });
+  });
+
+  describe('deleteAssets', () => {
+    it('should delete assets successfully', async () => {
+      mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
+
+      await client.deleteAssets('valid-token', ['asset-1', 'asset-2']);
+
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/api/assets', {
+        headers: { 'x-api-key': 'valid-token', 'Content-Type': 'application/json' },
+        data: { ids: ['asset-1', 'asset-2'] },
+        timeout: 30000,
+      });
+    });
+
+    it('should delete a single asset successfully', async () => {
+      mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
+
+      await client.deleteAssets('valid-token', ['single-asset']);
+
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/api/assets', {
+        headers: { 'x-api-key': 'valid-token', 'Content-Type': 'application/json' },
+        data: { ids: ['single-asset'] },
+        timeout: 30000,
+      });
+    });
+
+    it('should throw error for invalid token (401)', async () => {
+      const axiosError = new AxiosError('Unauthorized');
+      axiosError.response = { status: 401 } as any;
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('invalid-token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Invalid token');
+    });
+
+    it('should throw error for 403 Forbidden', async () => {
+      const axiosError = new AxiosError('Forbidden');
+      axiosError.response = { status: 403 } as any;
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Forbidden');
+    });
+
+    it('should throw error for 404 Not Found', async () => {
+      const axiosError = new AxiosError('Not Found');
+      axiosError.response = { status: 404 } as any;
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('token', ['nonexistent'])).rejects.toThrow('Asset deletion failed: Asset not found');
+    });
+
+    it('should throw error for 500 Server Error', async () => {
+      const axiosError = new AxiosError('Server Error');
+      axiosError.response = { status: 500 } as any;
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Server error');
+    });
+
+    it('should throw error for 503 Service Unavailable', async () => {
+      const axiosError = new AxiosError('Service Unavailable');
+      axiosError.response = { status: 503 } as any;
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Service unavailable');
+    });
+
+    it('should throw error for timeout', async () => {
+      const axiosError = new AxiosError('Timeout');
+      axiosError.code = 'ECONNABORTED';
+
+      mockAxiosInstance.delete.mockRejectedValueOnce(axiosError);
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Request timeout');
+    });
+
+    it('should throw error for network error', async () => {
+      const networkError = new Error('Network Error');
+      mockAxiosInstance.delete.mockRejectedValueOnce(networkError);
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: Network Error');
+    });
+
+    it('should throw error for non-Error object', async () => {
+      mockAxiosInstance.delete.mockRejectedValueOnce('string error');
+
+      await expect(client.deleteAssets('token', ['asset-1'])).rejects.toThrow('Asset deletion failed: string error');
+    });
+
+    it('should throw error for empty token', async () => {
+      await expect(client.deleteAssets('', ['asset-1'])).rejects.toThrow('Token cannot be empty');
+    });
+
+    it('should throw error for whitespace-only token', async () => {
+      await expect(client.deleteAssets('   ', ['asset-1'])).rejects.toThrow('Token cannot be empty');
+    });
+
+    it('should throw error for empty asset IDs array', async () => {
+      await expect(client.deleteAssets('token', [])).rejects.toThrow('Asset IDs must be a non-empty array');
+    });
+
+    it('should throw error when asset IDs is not an array', async () => {
+      await expect(client.deleteAssets('token', 'not-an-array' as any)).rejects.toThrow('Asset IDs must be a non-empty array');
+    });
+
+    it('should handle multiple asset IDs', async () => {
+      const manyAssetIds = Array.from({ length: 50 }, (_, i) => `asset-${i}`);
+      mockAxiosInstance.delete.mockResolvedValueOnce({ data: {} });
+
+      await client.deleteAssets('valid-token', manyAssetIds);
+
+      expect(mockAxiosInstance.delete).toHaveBeenCalledWith('/api/assets', {
+        headers: { 'x-api-key': 'valid-token', 'Content-Type': 'application/json' },
+        data: { ids: manyAssetIds },
         timeout: 30000,
       });
     });

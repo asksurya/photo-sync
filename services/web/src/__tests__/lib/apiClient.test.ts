@@ -8,13 +8,15 @@ vi.mock('axios');
 describe('ApiClient', () => {
   let client: ApiClient;
   const mockGet = vi.fn();
+  const mockDelete = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock axios.create to return an object with a get method
+    // Mock axios.create to return an object with get and delete methods
     vi.mocked(axios.create).mockReturnValue({
       get: mockGet,
+      delete: mockDelete,
     } as any);
 
     client = new ApiClient('http://localhost:3000', 'test-token');
@@ -169,6 +171,137 @@ describe('ApiClient', () => {
       mockGet.mockRejectedValue(new Error('Network error'));
 
       await expect(client.getAssets(0, 100)).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('deleteAssets', () => {
+    it('should delete assets successfully', async () => {
+      mockDelete.mockResolvedValue({ data: { success: true, deletedCount: 3 } });
+
+      const result = await client.deleteAssets(['asset-1', 'asset-2', 'asset-3']);
+
+      expect(result).toEqual({ success: true, deletedCount: 3 });
+      expect(mockDelete).toHaveBeenCalledWith('/api/assets', {
+        headers: { Authorization: 'Bearer test-token' },
+        data: { assetIds: ['asset-1', 'asset-2', 'asset-3'] }
+      });
+    });
+
+    it('should delete a single asset successfully', async () => {
+      mockDelete.mockResolvedValue({ data: { success: true, deletedCount: 1 } });
+
+      const result = await client.deleteAssets(['single-asset']);
+
+      expect(result).toEqual({ success: true, deletedCount: 1 });
+      expect(mockDelete).toHaveBeenCalledWith('/api/assets', {
+        headers: { Authorization: 'Bearer test-token' },
+        data: { assetIds: ['single-asset'] }
+      });
+    });
+
+    // Input validation tests
+    it('should throw error if assetIds is empty array', async () => {
+      await expect(client.deleteAssets([])).rejects.toThrow(
+        'assetIds must be a non-empty array'
+      );
+    });
+
+    it('should throw error if assetIds is not an array', async () => {
+      await expect(client.deleteAssets('not-an-array' as any)).rejects.toThrow(
+        'assetIds must be a non-empty array'
+      );
+    });
+
+    // HTTP error response tests
+    it('should handle 401 Unauthorized error', async () => {
+      const error = {
+        isAxiosError: true,
+        response: { status: 401 }
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Unauthorized: Invalid or expired token'
+      );
+    });
+
+    it('should handle 403 Forbidden error', async () => {
+      const error = {
+        isAxiosError: true,
+        response: { status: 403 }
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Forbidden: Access denied'
+      );
+    });
+
+    it('should handle 404 Not Found error', async () => {
+      const error = {
+        isAxiosError: true,
+        response: { status: 404 }
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Not Found: Assets not found'
+      );
+    });
+
+    it('should handle 500 Internal Server Error', async () => {
+      const error = {
+        isAxiosError: true,
+        response: { status: 500 }
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Internal Server Error: Please try again later'
+      );
+    });
+
+    it('should handle 503 Service Unavailable error', async () => {
+      const error = {
+        isAxiosError: true,
+        response: { status: 503 }
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Service Unavailable: Please try again later'
+      );
+    });
+
+    it('should handle timeout errors', async () => {
+      const error = {
+        isAxiosError: true,
+        code: 'ECONNABORTED'
+      } as AxiosError;
+      mockDelete.mockRejectedValue(error);
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow(
+        'Request timeout: Gateway did not respond in time'
+      );
+    });
+
+    it('should handle network errors', async () => {
+      mockDelete.mockRejectedValue(new Error('Network error'));
+
+      await expect(client.deleteAssets(['asset-1'])).rejects.toThrow('Network error');
+    });
+
+    it('should handle multiple asset IDs', async () => {
+      const manyAssetIds = Array.from({ length: 50 }, (_, i) => `asset-${i}`);
+      mockDelete.mockResolvedValue({ data: { success: true, deletedCount: 50 } });
+
+      const result = await client.deleteAssets(manyAssetIds);
+
+      expect(result).toEqual({ success: true, deletedCount: 50 });
+      expect(mockDelete).toHaveBeenCalledWith('/api/assets', {
+        headers: { Authorization: 'Bearer test-token' },
+        data: { assetIds: manyAssetIds }
+      });
     });
   });
 });
