@@ -111,7 +111,8 @@ describe('EnrichmentService', () => {
         groupId: 'group-1',
         groupType: 'similar',
         isPrimaryVersion: true,
-        alternateVersions: ['/path/to/file2.jpg'],
+        alternateVersions: ['asset-2'],
+        alternateVersionExtensions: ['JPG'],
         duplicateGroupId: 'dup-1',
         duplicateType: 'exact',
         similarityScore: 1.0,
@@ -126,7 +127,8 @@ describe('EnrichmentService', () => {
         groupId: 'group-1',
         groupType: 'similar',
         isPrimaryVersion: false,
-        alternateVersions: ['/path/to/file1.jpg'],
+        alternateVersions: ['asset-1'],
+        alternateVersionExtensions: ['JPG'],
       });
     });
 
@@ -164,6 +166,7 @@ describe('EnrichmentService', () => {
         groupType: 'burst',
         isPrimaryVersion: true,
         alternateVersions: [],
+        alternateVersionExtensions: [],
       });
     });
 
@@ -268,6 +271,7 @@ describe('EnrichmentService', () => {
         groupType: 'similar',
         isPrimaryVersion: true,
         alternateVersions: [],
+        alternateVersionExtensions: [],
       });
 
       // Asset without path should remain unchanged
@@ -437,6 +441,7 @@ describe('EnrichmentService', () => {
         groupType: 'similar',
         isPrimaryVersion: true,
         alternateVersions: [],
+        alternateVersionExtensions: [],
       });
 
       expect(result[1]).toEqual({
@@ -448,6 +453,7 @@ describe('EnrichmentService', () => {
         groupType: 'burst',
         isPrimaryVersion: true,
         alternateVersions: [],
+        alternateVersionExtensions: [],
       });
     });
 
@@ -456,6 +462,18 @@ describe('EnrichmentService', () => {
         {
           id: 'asset-1',
           path: '/path/to/file1.jpg',
+          type: 'image',
+          size: 1024,
+        },
+        {
+          id: 'asset-2',
+          path: '/path/to/file2.jpg',
+          type: 'image',
+          size: 1024,
+        },
+        {
+          id: 'asset-3',
+          path: '/path/to/file3.jpg',
           type: 'image',
           size: 1024,
         },
@@ -478,7 +496,9 @@ describe('EnrichmentService', () => {
 
       const result = await enrichmentService.enrichAssets(assets);
 
-      expect(result[0].alternateVersions).toEqual(['/path/to/file2.jpg', '/path/to/file3.jpg']);
+      // Alternate versions should contain asset IDs, not file paths
+      expect(result[0].alternateVersions).toEqual(['asset-2', 'asset-3']);
+      expect(result[0].alternateVersionExtensions).toEqual(['JPG', 'JPG']);
     });
 
     it('should return assets unchanged when all assets have no paths', async () => {

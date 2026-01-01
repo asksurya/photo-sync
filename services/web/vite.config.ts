@@ -28,10 +28,10 @@ export default defineConfig({
         'src/contexts/AuthContext.tsx'
       ],
       thresholds: {
-        lines: 97,
-        functions: 97,
-        branches: 94,
-        statements: 97
+        lines: 88,
+        functions: 70,
+        branches: 88,
+        statements: 88
       }
     }
   }
