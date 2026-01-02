@@ -33,6 +33,7 @@ describe('createAssetsRouter', () => {
     mockImmichClient = {
       validateToken: jest.fn(),
       getAssets: jest.fn(),
+      deleteAssets: jest.fn(),
     } as any;
 
     // Create mock Enrichment service
@@ -42,6 +43,7 @@ describe('createAssetsRouter', () => {
 
     // Create Express app with the router
     app = express();
+    app.use(express.json());
     const router = createAssetsRouter(mockImmichClient, mockEnrichmentService);
     app.use('/assets', router);
 
@@ -494,6 +496,381 @@ describe('createAssetsRouter', () => {
           .expect(200);
 
         expect(mockImmichClient.getAssets).toHaveBeenCalledWith('valid-token', 5, 10);
+      });
+    });
+  });
+
+  describe('DELETE /', () => {
+    describe('Success Cases', () => {
+      it('should delete assets successfully', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['asset-1', 'asset-2', 'asset-3'] })
+          .expect(200);
+
+        expect(response.body).toEqual({
+          success: true,
+          deletedCount: 3
+        });
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'valid-token',
+          ['asset-1', 'asset-2', 'asset-3']
+        );
+      });
+
+      it('should delete a single asset successfully', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['single-asset'] })
+          .expect(200);
+
+        expect(response.body).toEqual({
+          success: true,
+          deletedCount: 1
+        });
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'valid-token',
+          ['single-asset']
+        );
+      });
+
+      it('should handle lowercase "bearer" prefix', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'bearer lowercase-token')
+          .send({ assetIds: ['asset-1'] })
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'lowercase-token',
+          ['asset-1']
+        );
+      });
+    });
+
+    describe('Authorization Validation', () => {
+      it('should return 401 when Authorization header is missing', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Missing Authorization header',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 401 when Authorization header is empty', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', '')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Missing Authorization header',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 401 when Authorization header is whitespace only', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', '   ')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Missing Authorization header',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 401 when Authorization header does not start with Bearer', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Basic sometoken')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Invalid Authorization header format',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 401 when Authorization header has no token after Bearer', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Invalid Authorization header format',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 401 when Authorization header has only whitespace after Bearer', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer   ')
+          .send({ assetIds: ['asset-1'] })
+          .expect(401);
+
+        expect(response.body).toEqual({
+          error: 'unauthorized',
+          message: 'Invalid Authorization header format',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Request Body Validation', () => {
+      it('should return 400 when assetIds is missing', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({})
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'assetIds must be a non-empty array',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds is null', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: null })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'assetIds must be a non-empty array',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds is not an array', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: 'single-string' })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'assetIds must be a non-empty array',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds is an empty array', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: [] })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'assetIds must be a non-empty array',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds contains non-string values', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['valid-id', 123, 'another-id'] })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'All asset IDs must be non-empty strings',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds contains empty strings', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['valid-id', '', 'another-id'] })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'All asset IDs must be non-empty strings',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+
+      it('should return 400 when assetIds contains null values', async () => {
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['valid-id', null] })
+          .expect(400);
+
+        expect(response.body).toEqual({
+          error: 'invalid_parameters',
+          message: 'All asset IDs must be non-empty strings',
+        });
+        expect(mockImmichClient.deleteAssets).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('Service Error Handling', () => {
+      it('should return 500 when Immich client throws an error', async () => {
+        mockImmichClient.deleteAssets.mockRejectedValueOnce(
+          new Error('Asset deletion failed: Server error')
+        );
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['asset-1'] })
+          .expect(500);
+
+        expect(response.body).toEqual({
+          error: 'internal_error',
+          message: 'Asset deletion failed: Server error',
+        });
+      });
+
+      it('should return 500 when Immich client throws invalid token error', async () => {
+        mockImmichClient.deleteAssets.mockRejectedValueOnce(
+          new Error('Asset deletion failed: Invalid token')
+        );
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer invalid-token')
+          .send({ assetIds: ['asset-1'] })
+          .expect(500);
+
+        expect(response.body).toEqual({
+          error: 'internal_error',
+          message: 'Asset deletion failed: Invalid token',
+        });
+      });
+
+      it('should return 500 when Immich client throws not found error', async () => {
+        mockImmichClient.deleteAssets.mockRejectedValueOnce(
+          new Error('Asset deletion failed: Asset not found')
+        );
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['nonexistent-asset'] })
+          .expect(500);
+
+        expect(response.body).toEqual({
+          error: 'internal_error',
+          message: 'Asset deletion failed: Asset not found',
+        });
+      });
+
+      it('should handle non-Error exceptions', async () => {
+        mockImmichClient.deleteAssets.mockRejectedValueOnce('string error');
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: ['asset-1'] })
+          .expect(500);
+
+        expect(response.body.error).toBe('internal_error');
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('should preserve token case sensitivity', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer CaSe-SeNsItIvE-ToKeN')
+          .send({ assetIds: ['asset-1'] })
+          .expect(200);
+
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'CaSe-SeNsItIvE-ToKeN',
+          ['asset-1']
+        );
+      });
+
+      it('should handle mixed case Bearer prefix', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        await request(app)
+          .delete('/assets')
+          .set('Authorization', 'BeArEr mixed-case-token')
+          .send({ assetIds: ['asset-1'] })
+          .expect(200);
+
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'mixed-case-token',
+          ['asset-1']
+        );
+      });
+
+      it('should handle large number of asset IDs', async () => {
+        const manyAssetIds = Array.from({ length: 100 }, (_, i) => `asset-${i}`);
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        const response = await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer valid-token')
+          .send({ assetIds: manyAssetIds })
+          .expect(200);
+
+        expect(response.body).toEqual({
+          success: true,
+          deletedCount: 100
+        });
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'valid-token',
+          manyAssetIds
+        );
+      });
+
+      it('should trim whitespace from token', async () => {
+        mockImmichClient.deleteAssets.mockResolvedValueOnce(undefined);
+
+        await request(app)
+          .delete('/assets')
+          .set('Authorization', 'Bearer   token-with-spaces   ')
+          .send({ assetIds: ['asset-1'] })
+          .expect(200);
+
+        expect(mockImmichClient.deleteAssets).toHaveBeenCalledWith(
+          'token-with-spaces',
+          ['asset-1']
+        );
       });
     });
   });

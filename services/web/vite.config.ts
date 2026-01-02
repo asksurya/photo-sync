@@ -15,6 +15,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
+    exclude: ['**/node_modules/**', '**/e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -24,8 +25,7 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/__tests__/**',
         'src/main.tsx',
-        'src/vite-env.d.ts',
-        'src/contexts/AuthContext.tsx'
+        'src/vite-env.d.ts'
       ],
       thresholds: {
         lines: 88,
